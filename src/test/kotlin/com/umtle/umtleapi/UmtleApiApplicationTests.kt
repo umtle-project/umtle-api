@@ -7,9 +7,7 @@ import org.springframework.context.annotation.Import
 @SpringBootTest
 @Import(TestcontainersConfiguration::class)
 class UmtleApiApplicationTests {
-
-	@Test
-	fun contextLoads() {
-	}
-
+    @Test
+    fun contextLoads() {
+    }
 }

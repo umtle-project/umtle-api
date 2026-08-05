@@ -8,11 +8,7 @@ import org.testcontainers.utility.DockerImageName
 
 @TestConfiguration(proxyBeanMethods = false)
 class TestcontainersConfiguration {
-
-	@Bean
-	@ServiceConnection
-	fun mysqlContainer(): MySQLContainer<*> {
-		return MySQLContainer(DockerImageName.parse("mysql:8.4"))
-	}
-
+    @Bean
+    @ServiceConnection
+    fun mysqlContainer(): MySQLContainer<*> = MySQLContainer(DockerImageName.parse("mysql:8.4"))
 }

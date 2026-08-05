@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class UmtleApiApplication
 
 fun main(args: Array<String>) {
-	runApplication<UmtleApiApplication>(*args)
+    runApplication<UmtleApiApplication>(*args)
 }
