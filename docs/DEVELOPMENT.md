@@ -163,3 +163,14 @@
 - Docker-related files (e.g. `docker/compose.yaml`) live under the `docker/` directory at the project root, not the repository root.
 - `docker/compose.yaml` is local-development-only (never deployed) and currently has its MySQL credentials hardcoded directly rather than sourced from an env file — there is no `.env` in active use in this project right now. If a genuinely security-sensitive value needs to be introduced later (e.g. for something that gets deployed), keep it out of tracked files and document the convention here at that point rather than reusing this note as-is.
 - See `docs/tasks/TASK-000-bootstrap-project.md` for the rationale behind the current profile setup and Docker Compose wiring.
+
+---
+
+## 14. Code Style
+
+- Kotlin source (`src/**/*.kt`) and Gradle Kotlin DSL files (`*.gradle.kts`) are formatted with [Spotless](https://github.com/diffplug/spotless) using [ktlint](https://pinterest.github.io/ktlint/)'s standard rule set (4-space indentation, import ordering, no wildcard imports, trailing-whitespace/final-newline cleanup, among others). Configuration lives in `build.gradle.kts`.
+- Before opening a PR, run:
+  - `./gradlew spotlessApply` — auto-format any violations.
+  - `./gradlew spotlessCheck` — verify formatting without changing files; this also runs automatically as part of `./gradlew check` / `./gradlew build`, so CI-equivalent local builds fail on style violations.
+- Do not hand-tune formatting to work around ktlint (e.g. inline `// ktlint-disable` suppressions) without a concrete reason recorded in the PR description — prefer letting `spotlessApply` reformat the code.
+- No custom rule overrides are configured yet; adopt ktlint's defaults as-is unless a real recurring friction point justifies deviating, and record that decision here if so.
