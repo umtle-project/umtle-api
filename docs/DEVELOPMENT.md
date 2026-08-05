@@ -6,7 +6,7 @@
 
 문서 우선순위는 `AGENTS.md`를 따르며, 이 문서는 `AGENTS.md`의 원칙과 모순되지 않는 범위에서만 유효하다.
 
-현재 이 저장소는 아직 git으로 초기화되어 있지 않다. 아래 Git 관련 절차(브랜치 전략, 커밋 컨벤션, PR 프로세스)는 git 초기화 이후 적용되는 것을 전제로 하며, 기존 커밋 이력에서 추출한 규칙이 아니라 이 프로젝트의 원칙에 맞춰 제안하는 합리적 기본값이다.
+Bootstrap(프로젝트 초기 세팅) 단계는 완료되었다. Bootstrap은 예외적으로 `main` 브랜치에서 직접 진행했으며, 그 이후부터는 아래 Git 관련 절차(브랜치 전략, 커밋 컨벤션, PR 프로세스)가 실제로 적용되는 표준 프로세스다.
 
 혼자 개발하는 프로젝트를 기준으로, 과도한 프로세스보다는 AI Role 간 독립성(구현자가 자신의 결과를 승인하지 않음)을 지키는 데 필요한 최소한의 절차만 정의한다.
 
@@ -29,25 +29,28 @@
   - `fix/<slug>` — 버그 수정
   - `docs/<slug>` — 문서 변경
   - `chore/<slug>` — 빌드/설정 등 기타 변경
+- 관련 Task 문서(`docs/tasks/TASK-XXX-*.md`)가 있는 작업은 `<slug>`에 해당 Task ID를 포함한다 (예: `feature/TASK-001-create-academy`, `fix/TASK-015-fix-login`). Task 문서 없이 진행하는 작업(7장 참고)은 짧은 설명만으로 충분하다 (예: `chore/add-spotless`, `docs/update-readme`).
 - 브랜치는 병합 후 삭제한다.
 
 ---
 
 ## 3. Git Workflow
 
-1. `main`에서 새 브랜치를 생성한다.
-2. 작업 범위는 관련 `docs/tasks/` 문서(있는 경우) 또는 요청받은 범위로 한정한다.
-3. 의미 있는 단위로 작게 커밋한다.
-4. 브랜치를 원격에 푸시하고 PR을 생성한다.
-5. Review Agent의 독립 리뷰를 거친 뒤, 사람이 최종적으로 머지를 결정한다.
-6. 머지 후 브랜치를 삭제한다.
-- 히스토리를 단순하게 유지하기 위해 `rebase`보다 단순 병합 또는 squash merge를 기본으로 한다. 솔로 개발자 기준으로 rebase의 복잡도를 감수할 이유가 없다.
+Bootstrap 이후부터는 `main`에서 직접 작업하지 않는다. `main`에는 직접 commit하거나 push하지 않으며, 모든 변경은 PR을 통해서만 `main`에 반영된다.
+
+1. 모든 개발은 GitHub Issue로 시작한다.
+2. Issue를 기반으로 2장의 브랜치 명명 규칙에 따라 `main`에서 새 브랜치를 생성한다.
+3. 작업 범위는 관련 `docs/tasks/` 문서(있는 경우) 또는 Issue에 기술된 범위로 한정한다.
+4. 의미 있는 단위로 작게 커밋한다 (4장 Commit Convention 참고).
+5. 브랜치를 원격에 푸시하고, 관련 Issue와 Task 문서를 연결한 PR을 생성한다 (5장 Pull Request Process 참고).
+6. Review Agent의 독립 리뷰를 거친 뒤, 사람이 최종적으로 머지를 결정한다.
+7. 머지 후 브랜치를 삭제한다.
 
 ---
 
 ## 4. Commit Convention
 
-기존 커밋 이력이 없으므로, Conventional Commits 스타일을 기본값으로 제안한다.
+Conventional Commits 스타일을 따른다.
 
 ```
 <type>: <short summary>
@@ -60,18 +63,34 @@
 - `test`: 테스트 추가/수정
 - `chore`: 빌드, 설정, 의존성 등
 
-커밋 메시지는 "무엇을" 바꿨는지보다 "왜" 바꿨는지를 우선 설명한다.
+원격 저장소에 관련 GitHub Issue가 있으면 커밋 메시지 끝에 `(#이슈번호)`를 추가한다.
+
+```
+<type>: <short summary> (#<issue-number>)
+```
+
+예: `feat: add student enrollment flow (#123)`. 관련 Issue가 없는 커밋(예: Bootstrap 단계의 초기 커밋)은 생략한다.
+
+커밋 메시지는 영어로 작성하며, "무엇을" 바꿨는지보다 "왜" 바꿨는지를 우선 설명한다.
+
+하나의 커밋은 하나의 목적만 가진다.
+
+- 서로 다른 성격의 변경은 같은 커밋에 포함하지 않는다.
+- 문서, 설정, 기능 구현은 가능하면 서로 다른 커밋으로 분리한다.
 
 ---
 
 ## 5. Pull Request Process
 
 - 모든 변경(문서 포함)은 `main`에 직접 커밋하지 않고 PR을 통해 반영한다 — 솔로 개발자라도 PR은 Review Agent가 개입할 수 있는 체크포인트 역할을 한다.
+- PR 제목은 한국어로 작성한다.
+- PR은 반드시 관련 GitHub Issue와 Task 문서(`docs/tasks/TASK-XXX-*.md`, 있는 경우)를 연결한다.
 - PR 설명에는 다음을 포함한다.
-  - 변경 목적과 관련 `docs/tasks/` 항목 또는 요청 내용
+  - 변경 목적과 관련 Issue/`docs/tasks/` 항목 또는 요청 내용
   - 영향을 받는 문서(있는 경우) 및 갱신 여부
   - 실행한 테스트/검증 결과
 - PR은 Review Agent의 리뷰(6장 참고)를 거친 뒤 사람이 최종 승인하고 머지한다. Implementation Agent가 자신의 PR을 스스로 승인하지 않는다.
+- Merge 방식은 Squash Merge를 사용한다 — 브랜치 내 커밋 수와 무관하게 `main`의 히스토리를 PR 단위로 단순하게 유지한다.
 
 ---
 
@@ -97,6 +116,7 @@
   - 인수 조건과 Definition of Done
   - 관련 상위 문서(REQUIREMENTS.md 항목, ADR 등)
 - 작은 범위의 변경(오타 수정, 단일 파일의 명확한 버그 수정 등)은 별도 task 문서 없이 진행할 수 있다.
+- Task 문서 작성 후 GitHub Issue를 생성해 개발을 시작한다 (3장 Git Workflow 참고).
 
 ---
 
