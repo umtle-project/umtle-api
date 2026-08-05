@@ -1,0 +1,7 @@
+# Test profile, activated via src/test/resources/application.yml.
+#
+# No datasource settings are defined here: TestcontainersConfiguration
+# (src/test/kotlin/.../TestcontainersConfiguration.kt) starts a real MySQL
+# container and wires the datasource via Spring Boot's service connection.
+#
+# Add test-only overrides here as they become necessary.

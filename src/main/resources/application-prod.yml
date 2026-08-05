@@ -1,0 +1,11 @@
+# Production profile placeholder.
+#
+# Not activated anywhere yet (no deployment target exists) — activate it
+# explicitly via SPRING_PROFILES_ACTIVE=prod (or spring.profiles.active=prod)
+# once one does.
+#
+# No settings are defined yet: datasource, security, and other
+# production-specific configuration are intentionally deferred until a real
+# deployment target exists. See docs/ARCHITECTURE.md § Deferred Decisions
+# and docs/tasks/TASK-000-bootstrap-project.md. Do not invent settings here
+# ahead of that decision.

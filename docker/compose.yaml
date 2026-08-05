@@ -1,0 +1,17 @@
+name: umtle-api
+
+services:
+  mysql:
+    image: 'mysql:8.4'
+    environment:
+      - 'MYSQL_DATABASE=umtle_local'
+      - 'MYSQL_USER=umtle_local'
+      - 'MYSQL_PASSWORD=secret'
+      - 'MYSQL_ROOT_PASSWORD=verysecret'
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql-local-data:/var/lib/mysql
+
+volumes:
+  mysql-local-data:

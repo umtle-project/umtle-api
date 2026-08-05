@@ -1,0 +1,12 @@
+# Local development profile (active by default, see application.yml).
+
+spring:
+  docker:
+    compose:
+      file: docker/compose.yaml
+
+# No datasource settings are defined here: the line above starts
+# docker/compose.yaml automatically, and Spring Boot's Docker Compose
+# service connection wires the datasource for us.
+#
+# Add other local-only overrides here as they become necessary.
