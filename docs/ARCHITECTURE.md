@@ -6,7 +6,7 @@
 
 이 문서는 `PRD.md`, `REQUIREMENTS.md`, `DOMAIN_MODEL.md`의 하위 문서이며, 상위 문서와 모순되지 않는 범위에서만 유효하다. 문서 우선순위는 `AGENTS.md`를 따른다.
 
-`USER_ROLES.md`는 아직 작성되지 않았다. 이에 따라 인증/인가의 구체적인 구현 방식 등 권한 관련 기술 결정은 이 문서에서 확정하지 않고 7장 "Deferred Decisions"로 분리한다.
+`USER_ROLES.md`는 도메인별 권한 매트릭스를 정의하지만, 인증/인가의 구체적인 구현 방식 등 권한 관련 기술 결정은 이 문서에서 확정하지 않고 8장 "Deferred Decisions"로 분리한다.
 
 ---
 
