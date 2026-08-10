@@ -1,6 +1,8 @@
 package com.umtle.umtleapi.common.presentation
 
+import com.umtle.umtleapi.classroom.application.InvalidTeacherAssignmentException
 import com.umtle.umtleapi.common.domain.AggregateNotFoundException
+import com.umtle.umtleapi.lesson.domain.InvalidLessonStateTransitionException
 import com.umtle.umtleapi.user.application.DuplicateLoginIdException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -16,4 +18,12 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateLoginIdException::class)
     fun handleDuplicateLoginId(exception: DuplicateLoginIdException): ProblemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.message ?: "Duplicate loginId")
+
+    @ExceptionHandler(InvalidLessonStateTransitionException::class)
+    fun handleInvalidLessonStateTransition(exception: InvalidLessonStateTransitionException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Invalid lesson state transition")
+
+    @ExceptionHandler(InvalidTeacherAssignmentException::class)
+    fun handleInvalidTeacherAssignment(exception: InvalidTeacherAssignmentException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Invalid teacher assignment")
 }

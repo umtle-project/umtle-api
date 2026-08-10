@@ -111,7 +111,7 @@ Presentation → Application → Domain ← Infrastructure
 - **Aggregate 간에는 식별자(ID)로만 참조하며, 다른 Aggregate에 대한 객체 참조를 갖지 않는다.**
   - 예: `Lesson`이 `Class`를 참조할 때 `Class` 객체가 아닌 `classId` 값만 보유한다.
 - 하나의 Aggregate는 하나의 트랜잭션 안에서 일관성을 보장하는 단위다.
-- Class와 Lesson이 하나의 Aggregate인지, 별도의 Aggregate인지 등 세부 경계는 아직 확정할 근거가 없어 7장 "Deferred Decisions"로 분리한다.
+- Class와 Lesson은 `ADR-006`에 따라 별도 Aggregate로 분리한다. Attendance/Homework/LearningRecord의 세부 종속 관계는 8장 "Deferred Decisions"로 분리한다.
 
 ---
 
@@ -163,7 +163,7 @@ Presentation → Application → Domain ← Infrastructure
 
 다음 항목은 이번 초안에서 확정할 근거가 부족하여 보류한다. 결정이 필요해지는 시점에 관련 컨텍스트와 함께 별도로 논의하고, 확정되면 `docs/DECISIONS.md` 또는 `docs/adr/`에 기록한 뒤 이 문서를 갱신한다.
 
-1. **Aggregate 내부 경계 세부 확정** — Attendance/Homework/LearningRecord가 Lesson 또는 Student 중 어디에 종속되는 Aggregate인지는 계속 보류한다. Class와 Lesson의 경계, 반-학생/반-선생님 배정 방식은 `ADR-006`으로 해소했다(별도 Aggregate + 값 컬렉션 기반 다대다).
+1. **Aggregate 내부 경계 세부 확정** — Attendance/Homework/LearningRecord가 Lesson 또는 Student 중 어디에 종속되는 Aggregate인지는 계속 보류한다. Class와 Lesson의 경계, 반-학생/반-선생님 배정 방식은 `ADR-006`으로 해소했다(별도 Aggregate + 순수 id 값 기반 다대다).
 2. **여러 Aggregate 동시 변경 시 정합성 처리 전략** — 단일 트랜잭션 허용 범위, 도메인 이벤트 도입 여부와 시점.
 3. **예외 및 에러 응답 규격** — 공통 예외 처리 구조, API 에러 응답 포맷. 단, Aggregate id 조회 실패에 대한 공통 404 처리는 `ADR-003`으로 해소했다.
 4. **Presentation과 Domain 간 검증(Validation) 책임 분리 기준** — 형식 검증과 비즈니스 규칙 검증의 경계.
