@@ -10,8 +10,9 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_roles (
+    id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     role VARCHAR(20) NOT NULL,
-    PRIMARY KEY (user_id, role),
-    CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id)
+    PRIMARY KEY (id),
+    CONSTRAINT uk_user_roles_user_role UNIQUE (user_id, role)
 );

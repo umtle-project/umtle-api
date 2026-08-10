@@ -1,4 +1,4 @@
-# ADR-006: Class와 Lesson을 별도 Aggregate로 분리하고, 반-학생/반-선생님 배정은 값 컬렉션으로 관리한다
+# ADR-006: Class와 Lesson을 별도 Aggregate로 분리하고, 반-학생/반-선생님 배정은 순수 id 값으로 관리한다
 
 ## Status
 
@@ -24,11 +24,14 @@ Accepted (2026-08-10)
 이번 ADR은 Deferred Decision #1을 **부분적으로** 해소한다 — Class/Lesson 경계와 반-학생/선생님 배정 방식만 다루고, Attendance/Homework/LearningRecord가 Lesson과 Student 중 어디에 종속되는지는 해당 도메인을 실제로 구현하는 시점까지 계속 보류한다.
 
 1. **Class와 Lesson은 별도의 Aggregate로 분리한다.**
+   - 코드에서는 Kotlin/Java `Class` 타입과의 혼동을 피하기 위해 반 Aggregate 이름을 `Classroom`으로 구현한다. API 경로(`/api/v1/classes`), DB 테이블(`classes`), `classId` 필드명은 그대로 유지한다.
    - `Lesson`은 `Class`를 객체로 참조하지 않고 `classId: Long`만 컬럼으로 보유한다(`ARCHITECTURE.md` §6.1 원칙 그대로 적용).
    - 각 Aggregate는 독립적인 트랜잭션 경계를 가진다.
-2. **반-학생, 반-선생님 배정은 다대다이며, `Class` Aggregate가 소유하는 값 컬렉션으로 관리한다.**
-   - `Class`는 `studentIds: Set<Long>`, `teacherIds: Set<Long>`을 `@ElementCollection`으로 보유한다(`UserJpaEntity.roles`와 동일 패턴).
+2. **반-학생, 반-선생님 배정은 다대다이며, `Class` Aggregate가 소유하는 순수 id 값 컬렉션으로 관리한다.**
+   - 코드의 `Classroom` 도메인은 `studentIds: Set<Long>`, `teacherIds: Set<Long>`을 보유한다.
+   - 영속성은 `ClassStudentJpaEntity(id, classId, studentId)`, `ClassTeacherJpaEntity(id, classId, teacherId)` 단순 row 엔티티로 매핑한다. JPA `@ElementCollection`, `@JoinColumn`, 복합 PK, 물리 FK는 사용하지 않는다.
    - `studentIds`는 `Student`(`TASK-002`) Aggregate의 id를, `teacherIds`는 `User`(`TASK-003`) Aggregate 중 `TEACHER` 역할을 가진 사용자의 id를 참조한다.
+   - 물리 외래 키 제약은 두지 않고, 참조 대상 존재 여부는 Application Service에서 검증한다.
    - 배정 자체를 별도 Aggregate(예: `ClassEnrollment`)로 분리하지 않는다 — 배정에 날짜, 상태 등 부가 속성이 필요하다는 요구사항이 현재 없다.
 3. **`Lesson`은 상태값으로 `SCHEDULED`, `COMPLETED`, `CANCELLED`를 가진다.**
 
@@ -38,7 +41,7 @@ Accepted (2026-08-10)
 - 반과 수업의 CRUD 동사가 다르다(비활성화 vs 취소) — 서로 다른 생명주기를 가진다는 신호다.
 - 향후 일정/출결/숙제/학습기록 도메인이 `lessonId`를 직접 ID로 참조해야 하므로, Lesson이 Class에 종속되지 않고 독립적으로 조회 가능해야 한다.
 - `ADR-005`가 이미 "여러 Aggregate에 걸친 조회는 QueryDSL + ID 기반 JOIN"을 정책으로 확정했으므로, Class와 Lesson을 분리해도 함께 조회해야 하는 경우 이미 준비된 방식으로 처리할 수 있다 — 분리에 따른 조회 비용 문제가 이미 해소되어 있다.
-- `User.roles`(`ADR-005`가 인정한 값 컬렉션 패턴)가 다대다 배정에도 그대로 적용 가능하다 — 배정에 부가 속성이 필요하다는 근거가 없는 지금 시점에는 새 Aggregate를 만드는 것이 `AGENTS.md`/`ARCHITECTURE.md`의 "불필요한 추상화 지양" 원칙에 어긋난다.
+- `User.roles`의 순수 row 엔티티 저장 패턴이 다대다 배정에도 그대로 적용 가능하다 — 배정에 부가 속성이 필요하다는 근거가 없는 지금 시점에는 별도 Aggregate를 만드는 것이 `AGENTS.md`/`ARCHITECTURE.md`의 "불필요한 추상화 지양" 원칙에 어긋난다.
 
 ## Considered Alternatives
 
@@ -50,9 +53,9 @@ Accepted (2026-08-10)
 ### 2. 반-학생/반-선생님 배정을 별도 `ClassEnrollment`/`ClassAssignment` Aggregate로 분리
 
 - 설명: 배정 자체를 독립된 Aggregate로 만들어 배정일, 배정 상태 등 부가 속성을 담을 수 있게 한다.
-- 기각 사유(현재는): 배정에 부가 속성이 필요하다는 요구사항이 아직 없다. 근거 없이 미리 별도 Aggregate를 만드는 것은 과설계다. 실제로 그런 요구가 생기면 `User.roles` 값 컬렉션에서 별도 Aggregate로 마이그레이션한다.
+- 기각 사유(현재는): 배정에 부가 속성이 필요하다는 요구사항이 아직 없다. 근거 없이 미리 별도 Aggregate를 만드는 것은 과설계다. 실제로 그런 요구가 생기면 단순 row 엔티티에서 별도 Aggregate로 마이그레이션한다.
 
-### 3. (채택) 별도 Aggregate + 값 컬렉션 기반 다대다 배정
+### 3. (채택) 별도 Aggregate + 순수 id 값 기반 다대다 배정
 
 - 설명: 위 Decision 참고.
 - 기각 사유 없음 — 이 ADR의 결정.
@@ -71,7 +74,7 @@ Accepted (2026-08-10)
 
 ### Risks
 
-- 배정에 날짜, 승인 상태 등 부가 속성이 실제로 필요해지면, 값 컬렉션 구조로는 표현할 수 없어 별도 Aggregate로 마이그레이션이 필요하다.
+- 배정에 날짜, 승인 상태 등 부가 속성이 실제로 필요해지면, 현재의 단순 row 엔티티 구조로는 표현력이 부족해 별도 Aggregate로 마이그레이션이 필요하다.
 
 ## Validation
 
@@ -80,6 +83,6 @@ Accepted (2026-08-10)
 ## Related Documents
 
 - `docs/ARCHITECTURE.md` §8 Deferred Decision #1(이 ADR로 부분 해소 — Class/Lesson 경계와 배정 방식만, Attendance/Homework/LearningRecord 종속 관계는 계속 보류)
-- `docs/adr/ADR-005-query-strategy.md`(값 컬렉션과 QueryDSL ID 기반 JOIN 근거)
+- `docs/adr/ADR-005-query-strategy.md`(순수 id 값과 QueryDSL ID 기반 JOIN 근거)
 - `docs/DOMAIN_MODEL.md` §3.3
 - `docs/tasks/TASK-005-class-lesson-management.md`

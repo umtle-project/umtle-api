@@ -6,11 +6,11 @@ Ready
 
 ## Purpose
 
-`ADR-006`의 결정에 따라 Class(반)와 Lesson(수업) Aggregate를 구현한다. `DOMAIN_MODEL.md`가 Student 다음 순서로 참조하는 도메인이며, 향후 일정/출결/숙제/학습 기록 도메인이 참조할 `classId`/`lessonId`의 기반이 된다.
+`ADR-006`의 결정에 따라 Class(반)와 Lesson(수업) Aggregate를 구현한다. 코드에서는 Kotlin/Java `Class` 타입과의 혼동을 피하기 위해 반 Aggregate를 `Classroom`으로 명명한다. `DOMAIN_MODEL.md`가 Student 다음 순서로 참조하는 도메인이며, 향후 일정/출결/숙제/학습 기록 도메인이 참조할 `classId`/`lessonId`의 기반이 된다.
 
 ## Background
 
-`TASK-002`(Student), `TASK-003`(User + 인증/인가)가 완료되어 있고, `ARCHITECTURE.md` §8 Deferred Decision #1(Aggregate 경계)이 `ADR-006`으로 부분 해소되었다 — Class/Lesson은 별도 Aggregate, 반-학생/반-선생님 배정은 다대다이며 `Class`가 소유하는 값 컬렉션으로 관리, Lesson 상태값은 `SCHEDULED`/`COMPLETED`/`CANCELLED`.
+`TASK-002`(Student), `TASK-003`(User + 인증/인가)가 완료되어 있고, `ARCHITECTURE.md` §8 Deferred Decision #1(Aggregate 경계)이 `ADR-006`으로 부분 해소되었다 — Class/Lesson은 별도 Aggregate, 반-학생/반-선생님 배정은 다대다이며 코드의 `Classroom`이 소유하는 순수 id 값 컬렉션으로 관리, Lesson 상태값은 `SCHEDULED`/`COMPLETED`/`CANCELLED`.
 
 ## Related Documents and Requirement IDs
 
@@ -41,24 +41,24 @@ Ready
 
 ## Scope
 
-### Class 도메인
+### Class/Classroom 도메인
 
-- `classroom/domain/Class.kt` — `Student.kt`와 동일한 패턴(private 생성자 + `register(name)` / `reconstitute(...)` companion factory). TSID `Long` id, `@GeneratedValue` 없이 factory에서 직접 할당(`ADR-002`).
+- `classroom/domain/Classroom.kt` — `Student.kt`와 동일한 패턴(private 생성자 + `register(name)` / `reconstitute(...)` companion factory). TSID `Long` id, `@GeneratedValue` 없이 factory에서 직접 할당(`ADR-002`).
 - 필드: `id`, `name`, `status`(`ACTIVE`/`INACTIVE`), `studentIds: Set<Long>`, `teacherIds: Set<Long>`.
 - 도메인 메서드: `rename(newName)`, `deactivate()`, `assignStudent(studentId)`/`unassignStudent(studentId)`, `assignTeacher(teacherId)`/`unassignTeacher(teacherId)`.
-- `classroom/domain/ClassStatus.kt`, `classroom/domain/ClassNotFoundException.kt`(`common.domain.AggregateNotFoundException` 상속, `ADR-003` 공통 패턴), `classroom/domain/ClassRepository.kt`(포트).
-- `classroom/infrastructure/ClassJpaEntity.kt` — `BaseEntity` 상속. `studentIds`/`teacherIds`는 각각 `@ElementCollection` + `@CollectionTable`(`class_students`, `class_teachers`)로 저장 — `UserJpaEntity.roles`와 동일 패턴(`ADR-006`).
-- `classroom/infrastructure/ClassJpaRepository.kt`, `ClassRepositoryAdapter.kt`.
-- `classroom/application/ClassService.kt` — 등록/조회/목록/수정/비활성화/학생·선생님 배정·해제. 배정 시 대상 id가 실제 존재하는지 각각 `StudentRepository`(학생), `UserRepository`(선생님, `TEACHER` 역할 보유 여부 확인)로 검증 — JPA 연관관계가 아닌 Application Service 레벨의 ID 조회(`ARCHITECTURE.md` §6.1).
-- `classroom/presentation/ClassController.kt`, `ClassDtos.kt`. 별도 `ExceptionHandler`는 만들지 않는다 — `common.presentation.GlobalExceptionHandler`가 `ClassNotFoundException`을 자동으로 404로 처리한다(`ADR-003`).
+- `classroom/domain/ClassroomStatus.kt`, `classroom/domain/ClassroomNotFoundException.kt`(`common.domain.AggregateNotFoundException` 상속, `ADR-003` 공통 패턴), `classroom/domain/ClassroomRepository.kt`(포트).
+- `classroom/infrastructure/ClassroomJpaEntity.kt` — `BaseEntity` 상속. 배정은 `ClassStudentJpaEntity(id, classId, studentId)`, `ClassTeacherJpaEntity(id, classId, teacherId)` 단순 row 엔티티로 저장한다. JPA `@ElementCollection`, `@JoinColumn`, 복합 PK, 물리 FK는 사용하지 않는다.
+- `classroom/infrastructure/ClassroomJpaRepository.kt`, `ClassroomRepositoryAdapter.kt`.
+- `classroom/application/ClassroomService.kt` — 등록/조회/목록/수정/비활성화/학생·선생님 배정·해제. 배정 시 대상 id가 실제 존재하는지 각각 `StudentRepository`(학생), `UserRepository`(선생님, `TEACHER` 역할 보유 여부 확인)로 검증 — JPA 연관관계가 아닌 Application Service 레벨의 ID 조회(`ARCHITECTURE.md` §6.1).
+- `classroom/presentation/ClassroomController.kt`, `ClassroomDtos.kt`. 별도 `ExceptionHandler`는 만들지 않는다 — `common.presentation.GlobalExceptionHandler`가 `ClassroomNotFoundException`을 자동으로 404로 처리한다(`ADR-003`).
 
 ### Lesson 도메인
 
-- `lesson/domain/Lesson.kt` — 필드: `id`, `classId: Long`(ID 참조, `Class` 객체 아님), `status`(`SCHEDULED`/`COMPLETED`/`CANCELLED`).
+- `lesson/domain/Lesson.kt` — 필드: `id`, `classId: Long`(ID 참조, `Classroom` 객체 아님), `status`(`SCHEDULED`/`COMPLETED`/`CANCELLED`).
 - 도메인 메서드: `cancel()`, `complete()` — `SCHEDULED` 상태에서만 전이 가능(그 외 상태에서 호출 시 예외).
 - `lesson/domain/LessonStatus.kt`, `lesson/domain/LessonNotFoundException.kt`(`AggregateNotFoundException` 상속), `lesson/domain/LessonRepository.kt`.
 - `lesson/infrastructure/LessonJpaEntity.kt`(`classId`는 일반 `Long` 컬럼, 연관관계 아님), `LessonJpaRepository.kt`, `LessonRepositoryAdapter.kt`.
-- `lesson/application/LessonService.kt` — 등록 시 `classId`가 실제 존재하는 `Class`인지 `ClassRepository`로 검증. 조회/목록/수정/취소/완료.
+- `lesson/application/LessonService.kt` — 등록 시 `classId`가 실제 존재하는 `Classroom`인지 `ClassroomRepository`로 검증. 조회/목록/수정/취소/완료.
 - `lesson/presentation/LessonController.kt`, `LessonDtos.kt`.
 
 ### 데이터베이스
@@ -76,17 +76,19 @@ CREATE TABLE classes (
 );
 
 CREATE TABLE class_students (
+    id BIGINT NOT NULL,
     class_id BIGINT NOT NULL,
     student_id BIGINT NOT NULL,
-    PRIMARY KEY (class_id, student_id),
-    CONSTRAINT fk_class_students_class FOREIGN KEY (class_id) REFERENCES classes (id)
+    PRIMARY KEY (id),
+    CONSTRAINT uk_class_students_class_student UNIQUE (class_id, student_id)
 );
 
 CREATE TABLE class_teachers (
+    id BIGINT NOT NULL,
     class_id BIGINT NOT NULL,
     teacher_id BIGINT NOT NULL,
-    PRIMARY KEY (class_id, teacher_id),
-    CONSTRAINT fk_class_teachers_class FOREIGN KEY (class_id) REFERENCES classes (id)
+    PRIMARY KEY (id),
+    CONSTRAINT uk_class_teachers_class_teacher UNIQUE (class_id, teacher_id)
 );
 
 CREATE TABLE lessons (
@@ -99,7 +101,7 @@ CREATE TABLE lessons (
 );
 ```
 
-`class_students`/`class_teachers`의 `student_id`/`teacher_id`에는 외래 키를 걸지 않는다 — 각각 `Student`, `User` Aggregate를 참조하는 것이라 `classes` 테이블처럼 같은 Aggregate 소유 테이블이 아니다(`ARCHITECTURE.md` §6.1, ID 참조 원칙).
+물리 외래 키는 두지 않는다 — Aggregate 간 참조는 물론 배정 보조 테이블도 순수 id 값만 저장하고, 참조 대상 존재 여부는 Application Service에서 검증한다(`ARCHITECTURE.md` §6.1, ID 참조 원칙).
 
 ### 인가
 
@@ -131,13 +133,13 @@ CREATE TABLE lessons (
 
 ## API Changes
 
-- `POST /api/v1/classes` — 201, `{ "name": string }` → `ClassResponse`
+- `POST /api/v1/classes` — 201, `{ "name": string }` → `ClassroomResponse`
 - `GET /api/v1/classes` / `GET /api/v1/classes/{id}` — 200 / 404
 - `PATCH /api/v1/classes/{id}` — 200, `{ "name": string }`
 - `POST /api/v1/classes/{id}/deactivate` — 200
 - `POST /api/v1/classes/{id}/students` — 200, `{ "studentId": number }` (배정) / `DELETE /api/v1/classes/{id}/students/{studentId}`(해제)
 - `POST /api/v1/classes/{id}/teachers` — 200, `{ "teacherId": number }` / `DELETE /api/v1/classes/{id}/teachers/{teacherId}`
-- `ClassResponse`: `{ "id": number, "name": string, "status": "ACTIVE" | "INACTIVE", "studentIds": number[], "teacherIds": number[] }`
+- `ClassroomResponse`: `{ "id": number, "name": string, "status": "ACTIVE" | "INACTIVE", "studentIds": number[], "teacherIds": number[] }`
 - `POST /api/v1/lessons` — 201, `{ "classId": number }` → `LessonResponse`
 - `GET /api/v1/lessons` / `GET /api/v1/lessons/{id}` — 200 / 404
 - `POST /api/v1/lessons/{id}/cancel`, `POST /api/v1/lessons/{id}/complete` — 200
@@ -145,7 +147,7 @@ CREATE TABLE lessons (
 
 ## Domain Impact
 
-`DOMAIN_MODEL.md` 3.3 반/수업(Class/Lesson)의 `Class`, `Lesson` 두 Aggregate를 신규 도입한다(`ADR-006`). `Class`는 `Student`, `User` Aggregate를 id로만 참조하고, `Lesson`은 `Class`를 id로만 참조한다.
+`DOMAIN_MODEL.md` 3.3 반/수업(Class/Lesson)의 `Class`, `Lesson` 두 Aggregate를 신규 도입한다(`ADR-006`). 코드에서는 Class를 `Classroom`으로 구현한다. `Classroom`은 `Student`, `User` Aggregate를 id로만 참조하고, `Lesson`은 `Classroom`을 id로만 참조한다.
 
 ## Database Impact
 
@@ -153,21 +155,21 @@ CREATE TABLE lessons (
 
 ## Exception and Error Handling
 
-- 존재하지 않는 반/수업/배정 대상(학생/선생님) → 404(`ClassNotFoundException`/`LessonNotFoundException`, 학생/선생님은 `StudentNotFoundException`/`UserNotFoundException` 재사용).
+- 존재하지 않는 반/수업/배정 대상(학생/선생님) → 404(`ClassroomNotFoundException`/`LessonNotFoundException`, 학생/선생님은 `StudentNotFoundException`/`UserNotFoundException` 재사용).
 - Lesson의 잘못된 상태 전이(이미 종료된 수업 재취소 등) → 400.
 - 입력값 검증 실패(빈 이름 등) → 400(Spring 기본 처리).
 
 ## Test Scenarios
 
-- `ClassTest`(도메인 단위): 등록 검증, 학생/선생님 배정·해제, 중복 배정 멱등성, 비활성화.
+- `ClassroomTest`(도메인 단위): 등록 검증, 학생/선생님 배정·해제, 중복 배정 멱등성, 비활성화.
 - `LessonTest`: 등록, 취소/완료 전이, 잘못된 상태에서 전이 시도 시 예외.
-- `ClassApiTests`/`LessonApiTests`(MockMvc + Testcontainers): 전체 CRUD 플로우, 존재하지 않는 id 404, ADMIN 외 역할 403, 미인증 401.
+- `ClassroomApiTests`/`LessonApiTests`(MockMvc + Testcontainers): 전체 CRUD 플로우, 존재하지 않는 id 404, ADMIN 외 역할 403, 미인증 401.
 
 ## Acceptance Criteria
 
 - 위 API가 명세대로 동작한다.
 - `./gradlew build`(spotlessCheck 포함)와 `./gradlew test`가 통과한다.
-- `ClassNotFoundException`/`LessonNotFoundException`이 `AggregateNotFoundException`을 상속해 별도 `ExceptionHandler` 없이 404가 반환된다.
+- `ClassroomNotFoundException`/`LessonNotFoundException`이 `AggregateNotFoundException`을 상속해 별도 `ExceptionHandler` 없이 404가 반환된다.
 - `ARCHITECTURE.md` §8 Deferred Decision #1이 `ADR-006`으로 부분 해소되어 있다(Attendance/Homework/LearningRecord 부분은 계속 보류로 남아 있음을 확인).
 
 ## Definition of Done

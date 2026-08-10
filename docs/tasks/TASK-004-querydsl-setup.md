@@ -6,15 +6,14 @@ Ready
 
 ## Purpose
 
-`ADR-005`(JPA 연관관계 배제 + ID 기반 QueryDSL 조회 전략)의 결정을 실제 코드에 적용한다. 현재 코드에는 원칙 위반 사례가 없으므로, 이 작업의 핵심은 (1) 향후 복잡한 조회를 위한 QueryDSL 인프라를 미리 준비하고, (2) 이미 지켜지고 있는 원칙과 유지 예외(`@ElementCollection`/`@EntityGraph`)의 근거를 코드에 명시하는 것이다.
+`ADR-005`(JPA 연관관계 배제 + ID 기반 QueryDSL 조회 전략)의 결정을 실제 코드에 적용한다. 현재 코드에는 원칙 위반 사례가 없으므로, 이 작업의 핵심은 향후 복잡한 조회를 위한 QueryDSL 인프라를 미리 준비하는 것이다.
 
 ## Background
 
-사용자가 JPA 조회 구조 원칙(연관관계 대신 ID 참조, 단순 조회는 Spring Data JPA, 복잡한 조회는 QueryDSL, DTO 우선, `@ElementCollection`/`@EntityGraph`는 근거 있을 때만 유지)을 제시해 `docs/adr/ADR-005-query-strategy.md`로 정리했다. 코드를 직접 분석한 결과는 다음과 같다:
+사용자가 JPA 조회 구조 원칙(연관관계 대신 ID 참조, 단순 조회는 Spring Data JPA, 복잡한 조회는 QueryDSL, DTO 우선, JPA Entity는 순수 값 중심)을 제시해 `docs/adr/ADR-005-query-strategy.md`로 정리했다. 코드를 직접 분석한 결과는 다음과 같다:
 
 - JPA 엔티티 간 연관관계(`@OneToMany`/`@ManyToOne`/`@ManyToMany`/`@OneToOne`) 사용처: **0건**. Student, User 두 Aggregate 모두 서로를 참조하지 않으며, 프로젝트는 이미 `ARCHITECTURE.md` §6.1을 지키고 있다.
-- `@ElementCollection` 사용처: `UserJpaEntity.roles`(`src/main/kotlin/com/umtle/umtleapi/user/infrastructure/UserJpaEntity.kt`) — `UserRole` 값 집합을 `user_roles` 테이블에 저장. `@CollectionTable`의 `@JoinColumn(name = "user_id")`는 값 컬렉션 소유자 컬럼 매핑이며, 다른 Aggregate 참조가 아닌 User 소유 값 컬렉션이다.
-- `@EntityGraph` 사용처: `UserJpaRepository.findById`/`findByLoginId`(`src/main/kotlin/com/umtle/umtleapi/user/infrastructure/UserJpaRepository.kt`) — 위 값 컬렉션의 기본 지연 로딩을 즉시 로딩으로 전환.
+- `@ElementCollection`/`@EntityGraph` 사용처: 없음. `UserRole` 값 집합은 `UserRoleJpaEntity(id, userId, role)` 단순 row 엔티티로 저장한다.
 - QueryDSL: 미도입(`build.gradle.kts`에 관련 의존성/플러그인 없음).
 - 복잡한 조회(여러 Aggregate JOIN, 동적 조건): 현재 없음. `StudentService`/`UserService` 모두 단일 Aggregate 단순 CRUD뿐.
 
@@ -45,11 +44,6 @@ Ready
 - `common/infrastructure/QueryDslConfig.kt` 신규 — `EntityManager`를 주입받아 `JPAQueryFactory`를 `@Bean`으로 등록한다.
 - 기존 `StudentJpaRepository`, `UserJpaRepository`는 변경하지 않는다 — 둘 다 단일 Aggregate에 대한 단순 조회뿐이라 `ADR-005`의 "단순 조회는 Spring Data JPA" 원칙상 QueryDSL로 옮길 대상이 아니다.
 - 실제 QueryDSL 기반 복잡 조회(JOIN, DTO 프로젝션)는 이 작업에서 추가하지 않는다 — 현재 그런 요구가 없다. 인프라만 준비해 다음 도메인(반/수업 등)에서 바로 사용할 수 있게 한다.
-
-### 기존 코드 문서화 (유지 근거 명시)
-
-- `UserJpaEntity.kt`의 `@ElementCollection`/`@CollectionTable` 위에 주석 추가 — 다른 Aggregate에 대한 참조가 아닌 User 소유 값 컬렉션이라 `ARCHITECTURE.md` §6.1 및 `ADR-005`와 무관하게 유지한다는 설명.
-- `UserJpaRepository.kt`의 `@EntityGraph` 위에 주석 추가 — 값 컬렉션의 기본 지연 로딩으로 인한 `LazyInitializationException`을 막기 위함이며, 연관관계 제거와는 무관해 `ADR-005`에 따라 유지 대상이라는 설명.
 
 ### 검증
 
@@ -96,7 +90,7 @@ Ready
 - `./gradlew build`가 kapt Q-class 생성 단계를 포함해 성공한다.
 - `./gradlew test`가 `QueryDslSmokeTest`를 포함해 전부 통과한다.
 - `./gradlew spotlessCheck`가 통과한다.
-- `UserJpaEntity`/`UserJpaRepository`에 `@ElementCollection`/`@EntityGraph` 유지 근거 주석이 추가되어 있다.
+- JPA Entity에 `@ElementCollection`, `@EntityGraph`, JPA 엔티티 간 연관관계 어노테이션이 없다.
 - `docs/ARCHITECTURE.md` §8 Deferred Decision #6이 `ADR-005`로 해소되어 있다(단, `ADR-005`가 `Accepted`로 전환된 이후에 갱신 — `ADR-003`/`ADR-004` 선례를 따른다).
 
 ## Definition of Done

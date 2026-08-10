@@ -23,6 +23,8 @@ class SecurityConfig {
                 authorize(HttpMethod.GET, "/api/v1/students/**", hasAnyRole("ADMIN", "TEACHER"))
                 authorize("/api/v1/students/**", hasRole("ADMIN"))
                 authorize("/api/v1/users/**", hasRole("ADMIN"))
+                authorize("/api/v1/classes/**", hasRole("ADMIN"))
+                authorize("/api/v1/lessons/**", hasRole("ADMIN"))
                 authorize(anyRequest, authenticated)
             }
             csrf {

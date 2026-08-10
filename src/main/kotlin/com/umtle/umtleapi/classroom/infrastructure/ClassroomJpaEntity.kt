@@ -1,7 +1,7 @@
-package com.umtle.umtleapi.user.infrastructure
+package com.umtle.umtleapi.classroom.infrastructure
 
+import com.umtle.umtleapi.classroom.domain.ClassroomStatus
 import com.umtle.umtleapi.common.infrastructure.BaseEntity
-import com.umtle.umtleapi.user.domain.UserStatus
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -10,15 +10,13 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "users")
-class UserJpaEntity(
+@Table(name = "classes")
+class ClassroomJpaEntity(
     @Id
     val id: Long,
-    @Column(name = "login_id", nullable = false, unique = true, length = 50)
-    var loginId: String,
-    @Column(name = "password_hash", nullable = false, length = 100)
-    var passwordHash: String,
+    @Column(nullable = false, length = 100)
+    var name: String,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    var status: UserStatus,
+    var status: ClassroomStatus,
 ) : BaseEntity()
