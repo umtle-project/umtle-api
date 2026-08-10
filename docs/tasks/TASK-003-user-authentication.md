@@ -47,7 +47,7 @@ User 자신의 계정 관리(계정 생성/조회) 권한은 `REQUIREMENTS.md`�
 - `user/domain/UserRole.kt` — enum `ADMIN`, `TEACHER`, `STUDENT`, `PARENT` (`DOMAIN_MODEL.md` 3.1과 동일한 4개 역할).
 - `user/domain/UserStatus.kt` — enum `ACTIVE`, `INACTIVE`.
 - `user/domain/UserNotFoundException.kt`, `user/domain/UserRepository.kt` (포트).
-- `user/infrastructure/UserJpaEntity.kt` — `BaseEntity` 상속. 역할은 `@ElementCollection` + `@CollectionTable(name = "user_roles")`로 저장한다 — 이는 다른 Aggregate에 대한 참조가 아니라 User가 소유하는 값 컬렉션이므로 `ARCHITECTURE.md` 6장의 "JPA 연관관계 사용 금지"(Aggregate 간 참조 금지) 원칙과 충돌하지 않는다.
+- `user/infrastructure/UserJpaEntity.kt` — `BaseEntity` 상속. 역할은 `UserRoleJpaEntity(id, userId, role)` 단순 row 엔티티로 저장한다. 도메인에는 `Set<UserRole>`로 복원하되, JPA `@ElementCollection`, `@JoinColumn`, 물리 FK, 복합 PK는 사용하지 않는다.
 - `user/infrastructure/UserJpaRepository.kt`, `UserRepositoryAdapter.kt`.
 - `user/application/UserService.kt` — 계정 생성(관리자 전용, `PasswordEncoder`로 원문 비밀번호를 해싱해 `User.register`에 전달), 조회.
 - `user/application/AuthService.kt` — 로그인 검증(자격 증명 대조), 필요 시 `AuthenticationManager`로 위임.
@@ -90,10 +90,11 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_roles (
+    id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     role VARCHAR(20) NOT NULL,
-    PRIMARY KEY (user_id, role),
-    CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id)
+    PRIMARY KEY (id),
+    CONSTRAINT uk_user_roles_user_role UNIQUE (user_id, role)
 );
 ```
 

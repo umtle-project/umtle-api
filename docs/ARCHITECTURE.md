@@ -120,8 +120,9 @@ Presentation → Application → Domain ← Infrastructure
 ### 6.1 JPA 연관관계 사용 금지
 
 - `@ManyToOne`, `@OneToMany`, `@ManyToMany`, 연관관계용 `@JoinColumn` 등 JPA 엔티티 간 연관관계 매핑을 사용하지 않는다.
-- 단, `@ElementCollection` 값 컬렉션의 소유자 컬럼을 지정하기 위한 `@CollectionTable`/`@JoinColumn`은 다른 Aggregate 참조가 아니므로 이 금지 대상이 아니다.
 - JPA Entity는 다른 Aggregate를 참조할 때 연관관계 대신 식별자 값(예: `Long classId`)만 컬럼으로 보유한다.
+- 도메인 값 컬렉션을 별도 테이블에 저장해야 할 때도 `@ElementCollection`/`@CollectionTable` 대신 `id + ownerId + value`만 가진 단순 JPA Entity를 사용한다.
+- 데이터베이스에도 물리 외래 키 제약을 두지 않는다. 참조 대상 존재 여부는 Application Service에서 Repository 조회로 검증하고, 복합 조회는 QueryDSL/JPQL의 ID 기반 명시 조인 또는 Application 레벨 조합으로 처리한다.
 - 여러 Aggregate의 데이터를 함께 조회해야 하는 경우, 각 Aggregate의 Repository를 통해 개별 조회한 뒤 Application Service에서 조합한다.
 - 도입 이유:
   - Aggregate 경계를 코드 수준에서 강제하여 의도치 않은 그래프 탐색을 방지한다.
