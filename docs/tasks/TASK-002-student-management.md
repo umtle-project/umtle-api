@@ -2,7 +2,28 @@
 
 ## Status
 
-In Review
+In Review — PR 생성 대기
+
+## 진행 상황 (다음 세션에서 이어가기)
+
+- **브랜치**: `feature/TASK-002-student-management`, `origin`에 push 완료.
+- **커밋**(5개, 순서대로):
+  1. `chore: ignore local tool state directories`
+  2. `feat: implement student management domain (TASK-002)`
+  3. `docs: record TSID identifier decision and architecture updates` (ADR-002)
+  4. `docs: add TASK-002 record and sync requirements reference`
+  5. `docs: propose common not-found error handling and add decisions index` (ADR-003, DECISIONS.md)
+- **PR**: 아직 생성되지 않음 — 이 세션에서 `gh`가 로그인되어 있지 않아 자동 생성에 실패했다. 다음 세션에서:
+  1. `gh auth login`으로 로그인
+  2. `gh pr create` 또는 `/pr-helper`로 PR 생성. 제목/본문 초안은 아래 참고.
+  3. `docs/DEVELOPMENT.md` §6에 따라 **독립된 세션/도구**에서 Review Agent 리뷰 진행 — 특히 `docs/adr/ADR-003-common-not-found-error-handling.md`(Proposed, 채택 여부 미결정)와 이번에 되돌린 soft delete 제거 판단을 중점 확인.
+  4. 사람이 리뷰 결과를 보고 최종 승인/머지.
+- **PR 제목 초안**: `feat: 학생(Student) 관리 도메인 구현 및 아키텍처 정리 (TASK-002)`
+- **PR 본문 초안**: `.github/pull_request_template.md` 형식으로 이미 한 번 작성해 대화에 남겨뒀다 — 다음 세션에서 이 TASK 문서와 커밋 로그를 참고해 동일하게 재구성 가능.
+- **머지 이후 다음 작업 후보**:
+  - `ADR-003` 채택 여부 결정 → 채택되면 `StudentNotFoundException`/`StudentExceptionHandler`를 공통 패턴(`common.domain`/`common.presentation`)으로 마이그레이션.
+  - `TASK-003`: 반/수업(Class/Lesson) 도메인 — `DOMAIN_MODEL.md`가 Student 다음으로 참조하는 도메인. 단 `ARCHITECTURE.md` Deferred Decision #1(Class/Lesson이 하나의 Aggregate인지)이 먼저 정리되어야 스키마를 확정할 수 있다.
+  - `ARCHITECTURE.md` Deferred Decision #3(인증/인가 구현 방식) — `USER_ROLES.md`는 나왔지만 구현 방식 자체는 여전히 미정.
 
 ## Purpose
 
@@ -46,7 +67,7 @@ In Review
 - Spring Security 기반 인증/인가 강제.
 - "담당 학생" 스코핑(반/수업 배정 도메인 부재로 불가).
 - 학부모 연결, 반/수업/출결/숙제/학습기록 연동.
-- 프로젝트 전역 공통 예외 처리 구조(Deferred Decision #5) — 이 작업은 Student 도메인 한정 404/400 처리만 다룬다.
+- 프로젝트 전역 공통 예외 처리 구조(Deferred Decision #4) — 이 작업은 Student 도메인 한정 404/400 처리만 다룬다. 이후 `ADR-003`에서 부분적으로 다뤘다(Not Found 케이스만, Proposed).
 - `name` 외 추가 필드(연락처, 생년월일 등) — 필요해지면 별도 마이그레이션/작업으로 추가.
 
 ## Functional Scenarios
