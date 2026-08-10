@@ -1,0 +1,20 @@
+# DECISIONS.md
+
+# 움틀 채택된 기술 결정 요약
+
+이 문서는 `docs/adr/`에 기록된 ADR 중 **채택(Accepted)된** 결정만 한 줄 요약으로 모아두는 인덱스다. 결정의 배경·대안·트레이드오프 등 상세 내용은 각 ADR 본문을 따른다 — 이 문서는 내용을 중복 기록하지 않는다.
+
+`Proposed`(아직 사람이 승인하지 않은) 상태의 ADR은 여기 올리지 않는다 — `docs/adr/`에서 직접 확인한다.
+
+문서 우선순위는 `AGENTS.md`를 따른다.
+
+---
+
+| ADR | 제목 | 상태 | 날짜 |
+|-----|------|------|------|
+| [ADR-001](adr/ADR-001-start-with-monolith.md) | 단일 모놀리스로 시작한다 | Accepted | 2026-08-05 |
+| [ADR-002](adr/ADR-002-tsid-as-identifier.md) | Aggregate 식별자로 TSID를 사용한다 | Accepted | 2026-08-09 |
+
+---
+
+새 ADR이 `Accepted`로 전환되면 이 표에 한 줄을 추가한다. `Superseded`로 바뀌면 상태 열을 갱신하되 행을 삭제하지 않는다.

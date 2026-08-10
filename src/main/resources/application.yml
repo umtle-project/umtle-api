@@ -3,6 +3,9 @@ spring:
     name: umtle-api
   profiles:
     active: local
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 management:
   endpoints:
