@@ -16,7 +16,7 @@ Accepted (2026-08-10)
 - `DOMAIN_MODEL.md` §3.3은 "반과 학생, 반과 선생님의 정확한 배정 방식(다대다 여부 등) 및 수업 상태값은 미정"이라고 명시하고 있었다.
 - `TASK-002`(Student), `TASK-003`(User + 인증/인가)가 완료되어, 다음 도메인인 반/수업(Class/Lesson)을 구현하려면 이 경계를 확정해야 한다.
 - `REQUIREMENTS.md` 3.2는 반과 수업의 CRUD 동사가 다르다는 것을 보여준다: 반은 "생성, 조회, 수정, **비활성화**", 수업은 "생성, 조회, 수정, **취소**". 또한 수업은 "일정, 출결, 숙제, 학습 기록의 기준점"이 되어 향후 도메인들이 `lessonId`를 직접 참조하게 된다.
-- `TASK-003`에서 확립된 `User.roles` 패턴은 도메인에는 값 컬렉션을 노출하되, 영속성에서는 `id + ownerId + value`만 가진 단순 row 엔티티로 저장한다. 이 패턴이 다대다 배정에도 적용 가능한 선례로 존재한다.
+- `TASK-003`에서 확립된 `User.roles` 패턴(`@ElementCollection` + `@CollectionTable`로 값 컬렉션을 Aggregate가 직접 소유, `ADR-005`가 이를 "다른 Aggregate 참조가 아니므로 연관관계 금지 대상이 아니다"로 공식화)이 다대다 배정에도 적용 가능한 선례로 존재한다.
 - `DOMAIN_MODEL.md` §3.2는 "학생은 반, 수업, 출결, 숙제, 학습 기록과 연결되는 중심 엔티티"라고 명시한다 — 즉 Class가 참조하는 "학생"은 `TASK-002`의 `Student` Aggregate(id)를 의미한다. 반면 이 프로젝트에는 별도의 "Teacher" 도메인이 없으므로, "선생님"은 `TASK-003`의 `User` Aggregate 중 `TEACHER` 역할을 가진 사용자를 의미한다 — 학생과 선생님 참조 대상이 서로 다른 Aggregate라는 점에 주의.
 
 ## Decision
