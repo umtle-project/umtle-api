@@ -26,6 +26,7 @@ class UserJpaEntity(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     var status: UserStatus,
+    // UserRole은 다른 Aggregate가 아니라 User가 소유하는 값 컬렉션이므로 JPA 연관관계 금지 원칙의 대상이 아니다.
     @ElementCollection
     @CollectionTable(
         name = "user_roles",

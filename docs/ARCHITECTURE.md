@@ -119,7 +119,8 @@ Presentation → Application → Domain ← Infrastructure
 
 ### 6.1 JPA 연관관계 사용 금지
 
-- `@ManyToOne`, `@OneToMany`, `@ManyToMany`, `@JoinColumn` 등 JPA 연관관계 매핑을 사용하지 않는다.
+- `@ManyToOne`, `@OneToMany`, `@ManyToMany`, 연관관계용 `@JoinColumn` 등 JPA 엔티티 간 연관관계 매핑을 사용하지 않는다.
+- 단, `@ElementCollection` 값 컬렉션의 소유자 컬럼을 지정하기 위한 `@CollectionTable`/`@JoinColumn`은 다른 Aggregate 참조가 아니므로 이 금지 대상이 아니다.
 - JPA Entity는 다른 Aggregate를 참조할 때 연관관계 대신 식별자 값(예: `Long classId`)만 컬럼으로 보유한다.
 - 여러 Aggregate의 데이터를 함께 조회해야 하는 경우, 각 Aggregate의 Repository를 통해 개별 조회한 뒤 Application Service에서 조합한다.
 - 도입 이유:
@@ -166,7 +167,6 @@ Presentation → Application → Domain ← Infrastructure
 3. **예외 및 에러 응답 규격** — 공통 예외 처리 구조, API 에러 응답 포맷. 단, Aggregate id 조회 실패에 대한 공통 404 처리는 `ADR-003`으로 해소했다.
 4. **Presentation과 Domain 간 검증(Validation) 책임 분리 기준** — 형식 검증과 비즈니스 규칙 검증의 경계.
 5. **모놀리스 내부 패키지/모듈 분리 수준** — 도메인별 패키지 분리 규칙과 향후 모듈 분리(멀티모듈, MSA 전환 등) 판단 기준.
-6. **복합 조회(Read Model) 정책** — 5장의 "Aggregate 간 ID 참조" 원칙과 6장의 "JPA 연관관계 사용 금지" 원칙은 유지하되, 여러 Aggregate에 걸친 화면성 조회(예: 학생 목록 + 반/선생님/출결 요약)가 늘어나면 Application Service가 여러 Repository를 직접 조합하느라 비대해질 수 있다. 이 경우 Aggregate 경계나 JPA 연관관계 금지 원칙을 깨지 않는 범위에서 별도의 조회 전용 Read/Query Adapter를 허용할지, 허용한다면 어느 계층에 둘지는 아직 결정하지 않았다. 실제로 그런 복합 조회 요구가 나타나는 시점에 구체적 사례를 근거로 결정한다.
 
 ---
 
