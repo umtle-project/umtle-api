@@ -163,11 +163,10 @@ Presentation → Application → Domain ← Infrastructure
 
 1. **Aggregate 내부 경계 세부 확정** — Class와 Lesson이 하나의 Aggregate인지 별도 Aggregate인지, Attendance/Homework/LearningRecord가 Lesson 또는 Student 중 어디에 종속되는 Aggregate인지.
 2. **여러 Aggregate 동시 변경 시 정합성 처리 전략** — 단일 트랜잭션 허용 범위, 도메인 이벤트 도입 여부와 시점.
-3. **인증/인가 구현 방식** — 세션 기반/토큰 기반 여부, 인가 처리 위치(Presentation vs Application). `USER_ROLES.md` 확정 후 결정.
-4. **예외 및 에러 응답 규격** — 공통 예외 처리 구조, API 에러 응답 포맷.
-5. **Presentation과 Domain 간 검증(Validation) 책임 분리 기준** — 형식 검증과 비즈니스 규칙 검증의 경계.
-6. **모놀리스 내부 패키지/모듈 분리 수준** — 도메인별 패키지 분리 규칙과 향후 모듈 분리(멀티모듈, MSA 전환 등) 판단 기준.
-7. **복합 조회(Read Model) 정책** — 5장의 "Aggregate 간 ID 참조" 원칙과 6장의 "JPA 연관관계 사용 금지" 원칙은 유지하되, 여러 Aggregate에 걸친 화면성 조회(예: 학생 목록 + 반/선생님/출결 요약)가 늘어나면 Application Service가 여러 Repository를 직접 조합하느라 비대해질 수 있다. 이 경우 Aggregate 경계나 JPA 연관관계 금지 원칙을 깨지 않는 범위에서 별도의 조회 전용 Read/Query Adapter를 허용할지, 허용한다면 어느 계층에 둘지는 아직 결정하지 않았다. 실제로 그런 복합 조회 요구가 나타나는 시점에 구체적 사례를 근거로 결정한다.
+3. **예외 및 에러 응답 규격** — 공통 예외 처리 구조, API 에러 응답 포맷. 단, Aggregate id 조회 실패에 대한 공통 404 처리는 `ADR-003`으로 해소했다.
+4. **Presentation과 Domain 간 검증(Validation) 책임 분리 기준** — 형식 검증과 비즈니스 규칙 검증의 경계.
+5. **모놀리스 내부 패키지/모듈 분리 수준** — 도메인별 패키지 분리 규칙과 향후 모듈 분리(멀티모듈, MSA 전환 등) 판단 기준.
+6. **복합 조회(Read Model) 정책** — 5장의 "Aggregate 간 ID 참조" 원칙과 6장의 "JPA 연관관계 사용 금지" 원칙은 유지하되, 여러 Aggregate에 걸친 화면성 조회(예: 학생 목록 + 반/선생님/출결 요약)가 늘어나면 Application Service가 여러 Repository를 직접 조합하느라 비대해질 수 있다. 이 경우 Aggregate 경계나 JPA 연관관계 금지 원칙을 깨지 않는 범위에서 별도의 조회 전용 Read/Query Adapter를 허용할지, 허용한다면 어느 계층에 둘지는 아직 결정하지 않았다. 실제로 그런 복합 조회 요구가 나타나는 시점에 구체적 사례를 근거로 결정한다.
 
 ---
 

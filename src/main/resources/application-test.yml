@@ -5,3 +5,8 @@
 # container and wires the datasource via Spring Boot's service connection.
 #
 # Add test-only overrides here as they become necessary.
+
+umtle:
+  bootstrap-admin:
+    login-id: test-admin
+    password: test-admin-password

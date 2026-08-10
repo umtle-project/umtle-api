@@ -2,9 +2,9 @@
 
 ## Status
 
-Proposed
+Accepted
 
-이 ADR은 초안이며 아직 구현되지 않았다. 채택 여부는 사람이 결정하며, 채택 시에도 기존 `StudentExceptionHandler`/`StudentNotFoundException`을 이 패턴으로 옮기는 작업은 별도 task로 진행한다.
+`TASK-003`에서 User 도메인에 이 패턴을 적용했고, 기존 `StudentExceptionHandler`/`StudentNotFoundException`도 공통 `AggregateNotFoundException` 기반 처리로 마이그레이션했다.
 
 ## Date
 

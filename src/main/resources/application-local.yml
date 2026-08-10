@@ -10,3 +10,8 @@ spring:
 # service connection wires the datasource for us.
 #
 # Add other local-only overrides here as they become necessary.
+
+umtle:
+  bootstrap-admin:
+    login-id: admin
+    password: admin-password

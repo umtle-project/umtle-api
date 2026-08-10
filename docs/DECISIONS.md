@@ -14,6 +14,8 @@
 |-----|------|------|------|
 | [ADR-001](adr/ADR-001-start-with-monolith.md) | 단일 모놀리스로 시작한다 | Accepted | 2026-08-05 |
 | [ADR-002](adr/ADR-002-tsid-as-identifier.md) | Aggregate 식별자로 TSID를 사용한다 | Accepted | 2026-08-09 |
+| [ADR-003](adr/ADR-003-common-not-found-error-handling.md) | 공통 "Not Found" 예외 처리만 우선 통일한다 | Accepted | 2026-08-09 |
+| [ADR-004](adr/ADR-004-session-based-authentication.md) | 세션 기반 인증과 Presentation 계층 인가를 채택한다 | Accepted | 2026-08-10 |
 
 ---
 
