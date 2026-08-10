@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.3.21"
+    kotlin("kapt") version "2.3.21"
     kotlin("plugin.spring") version "2.3.21"
     id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
@@ -27,6 +28,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
     implementation("org.flywaydb:flyway-mysql")
     implementation("com.github.f4b6a3:tsid-creator:5.2.6")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -34,6 +36,7 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     runtimeOnly("com.mysql:mysql-connector-j")
+    kapt("com.querydsl:querydsl-apt:5.1.0:jakarta")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
