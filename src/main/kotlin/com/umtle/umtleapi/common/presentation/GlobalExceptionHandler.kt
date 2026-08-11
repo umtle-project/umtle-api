@@ -4,6 +4,9 @@ import com.umtle.umtleapi.attendance.application.DuplicateAttendanceException
 import com.umtle.umtleapi.attendance.application.UnassignedAttendanceStudentException
 import com.umtle.umtleapi.classroom.application.InvalidTeacherAssignmentException
 import com.umtle.umtleapi.common.domain.AggregateNotFoundException
+import com.umtle.umtleapi.homework.application.InvalidHomeworkUpdateException
+import com.umtle.umtleapi.homework.application.UnassignedHomeworkStudentException
+import com.umtle.umtleapi.homework.presentation.InvalidHomeworkRequestException
 import com.umtle.umtleapi.lesson.domain.InvalidLessonStateTransitionException
 import com.umtle.umtleapi.user.application.DuplicateLoginIdException
 import org.springframework.http.HttpStatus
@@ -36,4 +39,16 @@ class GlobalExceptionHandler {
     @ExceptionHandler(UnassignedAttendanceStudentException::class)
     fun handleUnassignedAttendanceStudent(exception: UnassignedAttendanceStudentException): ProblemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Unassigned attendance student")
+
+    @ExceptionHandler(UnassignedHomeworkStudentException::class)
+    fun handleUnassignedHomeworkStudent(exception: UnassignedHomeworkStudentException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Unassigned homework student")
+
+    @ExceptionHandler(InvalidHomeworkUpdateException::class)
+    fun handleInvalidHomeworkUpdate(exception: InvalidHomeworkUpdateException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Invalid homework update")
+
+    @ExceptionHandler(InvalidHomeworkRequestException::class)
+    fun handleInvalidHomeworkRequest(exception: InvalidHomeworkRequestException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Invalid homework request")
 }
