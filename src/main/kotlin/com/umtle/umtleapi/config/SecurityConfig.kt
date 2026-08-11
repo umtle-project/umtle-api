@@ -25,6 +25,8 @@ class SecurityConfig {
                 authorize(HttpMethod.GET, "/api/v1/attendances", hasAnyRole("ADMIN", "TEACHER"))
                 authorize(HttpMethod.GET, "/api/v1/attendances/**", hasAnyRole("ADMIN", "TEACHER"))
                 authorize(HttpMethod.PATCH, "/api/v1/attendances/**", hasRole("TEACHER"))
+                authorize("/api/v1/homeworks", hasRole("TEACHER"))
+                authorize("/api/v1/homeworks/**", hasRole("TEACHER"))
                 authorize(HttpMethod.GET, "/api/v1/students/**", hasAnyRole("ADMIN", "TEACHER"))
                 authorize("/api/v1/students/**", hasRole("ADMIN"))
                 authorize("/api/v1/users/**", hasRole("ADMIN"))
