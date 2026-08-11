@@ -12,7 +12,9 @@ import org.springframework.mock.web.MockHttpSession
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -79,6 +81,36 @@ class UserApiTests {
             .perform(get("/api/v1/users/$userId").session(session))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.loginId").value("teacher-api-test"))
+    }
+
+    @Test
+    fun `me returns the current user when authenticated`() {
+        val session = adminSession()
+
+        mockMvc
+            .perform(get("/api/v1/auth/me").session(session))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.loginId").value("test-admin"))
+            .andExpect(jsonPath("$.roles[0]").value("ADMIN"))
+    }
+
+    @Test
+    fun `me returns 401 when unauthenticated`() {
+        mockMvc
+            .perform(get("/api/v1/auth/me"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `preflight request from the local frontend origin is allowed`() {
+        mockMvc
+            .perform(
+                options("/api/v1/students")
+                    .header("Origin", "http://localhost:3000")
+                    .header("Access-Control-Request-Method", "GET"),
+            ).andExpect(status().isOk)
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+            .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
     }
 
     @Test
