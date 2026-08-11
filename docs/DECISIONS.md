@@ -19,6 +19,7 @@
 | [ADR-005](adr/ADR-005-query-strategy.md) | JPA 연관관계를 배제하고 ID 기반 QueryDSL 조회 전략을 채택한다 | Accepted | 2026-08-10 |
 | [ADR-006](adr/ADR-006-class-lesson-aggregate-boundary.md) | Class와 Lesson을 별도 Aggregate로 분리하고 배정은 순수 id 값으로 관리한다 | Accepted | 2026-08-10 |
 | [ADR-007](adr/ADR-007-attendance-homework-learningrecord-aggregate-boundary.md) | 출결/숙제/학습 기록을 각각 독립 Aggregate로 분리하고 Lesson/Student는 id로만 참조한다 | Accepted | 2026-08-11 |
+| [ADR-008](adr/ADR-008-user-student-parent-connection.md) | 학생 계정은 선택적 1:1, 학부모-학생 연결은 다대다로 관리한다 | Accepted | 2026-08-12 |
 
 ---
 
