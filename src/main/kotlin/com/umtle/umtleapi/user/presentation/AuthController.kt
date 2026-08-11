@@ -11,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -42,6 +43,12 @@ class AuthController(
         SecurityContextHolder.setContext(context)
         securityContextRepository.saveContext(context, servletRequest, servletResponse)
         return UserResponse.from(user)
+    }
+
+    @GetMapping("/me")
+    fun me(): UserResponse {
+        val loginId = SecurityContextHolder.getContext().authentication?.name ?: throw BadCredentialsException("Bad credentials")
+        return UserResponse.from(authService.currentUser(loginId))
     }
 
     @PostMapping("/logout")

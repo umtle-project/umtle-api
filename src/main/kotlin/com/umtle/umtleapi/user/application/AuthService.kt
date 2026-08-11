@@ -24,4 +24,7 @@ class AuthService(
         }
         return user
     }
+
+    @Transactional(readOnly = true)
+    fun currentUser(loginId: String): User = userRepository.findByLoginId(loginId) ?: throw BadCredentialsException("Bad credentials")
 }
