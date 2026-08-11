@@ -89,7 +89,7 @@ Conventional Commits 스타일을 따른다.
 ## 5. Pull Request Process
 
 - 모든 변경(문서 포함)은 `main`에 직접 커밋하지 않고 PR을 통해 반영한다 — 솔로 개발자라도 PR은 Review Agent가 개입할 수 있는 체크포인트 역할을 한다.
-- PR 제목은 한국어로 작성한다.
+- PR 제목은 4장 Commit Convention과 동일한 형식(`<type>: <summary>`, 관련 Issue가 있으면 끝에 `(#<이슈번호>)`)의 영어로 작성한다 — 브랜치를 열 때 GitHub이 자동으로 채우는 브랜치명 그대로 두지 않는다.
 - PR은 반드시 관련 GitHub Issue와 Task 문서(`docs/tasks/TASK-XXX-*.md`, 있는 경우)를 연결한다.
 - PR 설명에는 다음을 포함한다.
     - 변경 목적과 관련 Issue/`docs/tasks/` 항목 또는 요청 내용
