@@ -1,5 +1,7 @@
 package com.umtle.umtleapi.common.presentation
 
+import com.umtle.umtleapi.attendance.application.DuplicateAttendanceException
+import com.umtle.umtleapi.attendance.application.UnassignedAttendanceStudentException
 import com.umtle.umtleapi.classroom.application.InvalidTeacherAssignmentException
 import com.umtle.umtleapi.common.domain.AggregateNotFoundException
 import com.umtle.umtleapi.lesson.domain.InvalidLessonStateTransitionException
@@ -26,4 +28,12 @@ class GlobalExceptionHandler {
     @ExceptionHandler(InvalidTeacherAssignmentException::class)
     fun handleInvalidTeacherAssignment(exception: InvalidTeacherAssignmentException): ProblemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Invalid teacher assignment")
+
+    @ExceptionHandler(DuplicateAttendanceException::class)
+    fun handleDuplicateAttendance(exception: DuplicateAttendanceException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Duplicate attendance")
+
+    @ExceptionHandler(UnassignedAttendanceStudentException::class)
+    fun handleUnassignedAttendanceStudent(exception: UnassignedAttendanceStudentException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Unassigned attendance student")
 }
