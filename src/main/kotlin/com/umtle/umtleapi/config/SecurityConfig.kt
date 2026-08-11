@@ -11,12 +11,18 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.HttpStatusEntryPoint
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 class SecurityConfig {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
+            cors {
+                configurationSource = corsConfigurationSource()
+            }
             authorizeHttpRequests {
                 authorize(HttpMethod.POST, "/api/v1/auth/login", permitAll)
                 authorize("/actuator/health", permitAll)
@@ -48,4 +54,18 @@ class SecurityConfig {
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration =
+            CorsConfiguration().apply {
+                allowedOrigins = listOf("http://localhost:3000")
+                allowedMethods = listOf("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")
+                allowedHeaders = listOf("Content-Type", "X-XSRF-TOKEN")
+                allowCredentials = true
+            }
+        return UrlBasedCorsConfigurationSource().apply {
+            registerCorsConfiguration("/**", configuration)
+        }
+    }
 }
