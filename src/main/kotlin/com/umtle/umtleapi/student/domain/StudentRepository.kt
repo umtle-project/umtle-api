@@ -6,4 +6,6 @@ interface StudentRepository {
     fun findById(id: Long): Student?
 
     fun findAll(): List<Student>
+
+    fun searchByName(name: String): List<Student>
 }

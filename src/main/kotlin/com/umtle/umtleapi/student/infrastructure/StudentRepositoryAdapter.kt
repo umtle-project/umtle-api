@@ -14,6 +14,9 @@ class StudentRepositoryAdapter(
 
     override fun findAll(): List<Student> = jpaRepository.findAll().map { it.toDomain() }
 
+    override fun searchByName(name: String): List<Student> =
+        jpaRepository.findTop20ByNameContainingOrderByNameAsc(name).map { it.toDomain() }
+
     private fun Student.toEntity() =
         StudentJpaEntity(
             id = id,

@@ -19,6 +19,12 @@ class StudentService(
     @Transactional(readOnly = true)
     fun listStudents(): List<Student> = studentRepository.findAll()
 
+    @Transactional(readOnly = true)
+    fun searchStudents(name: String): List<Student> {
+        require(name.isNotBlank()) { "검색어는 비어 있을 수 없습니다." }
+        return studentRepository.searchByName(name)
+    }
+
     @Transactional
     fun updateStudent(
         id: Long,

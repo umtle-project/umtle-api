@@ -1,9 +1,12 @@
 package com.umtle.umtleapi.config
 
+import com.umtle.umtleapi.student.domain.Student
+import com.umtle.umtleapi.student.domain.StudentRepository
 import com.umtle.umtleapi.user.application.UserService
 import com.umtle.umtleapi.user.domain.User
 import com.umtle.umtleapi.user.domain.UserRepository
 import com.umtle.umtleapi.user.domain.UserRole
+import com.umtle.umtleapi.user.domain.UserStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -16,7 +19,7 @@ class BootstrapAdminRunnerTest {
         val runner =
             BootstrapAdminRunner(
                 userRepository = repository,
-                userService = UserService(repository, BCryptPasswordEncoder()),
+                userService = UserService(repository, EmptyStudentRepository, BCryptPasswordEncoder()),
                 loginId = "admin",
                 password = "admin-password",
             )
@@ -31,11 +34,11 @@ class BootstrapAdminRunnerTest {
     @Test
     fun `does not create another admin when one already exists`() {
         val repository = InMemoryUserRepository()
-        repository.save(User.register("existing-admin", "hashed-password", setOf(UserRole.ADMIN)))
+        repository.save(User.register("existing-admin", "기존 관리자", "hashed-password", setOf(UserRole.ADMIN)))
         val runner =
             BootstrapAdminRunner(
                 userRepository = repository,
-                userService = UserService(repository, BCryptPasswordEncoder()),
+                userService = UserService(repository, EmptyStudentRepository, BCryptPasswordEncoder()),
                 loginId = "new-admin",
                 password = "admin-password",
             )
@@ -71,8 +74,27 @@ class BootstrapAdminRunnerTest {
 
         override fun findByLoginId(loginId: String): User? = users.firstOrNull { it.loginId == loginId }
 
+        override fun findPendingByRoles(roles: Set<UserRole>): List<User> =
+            users.filter { it.status == UserStatus.PENDING && it.roles.any { role -> role in roles } }
+
         override fun existsByLoginId(loginId: String): Boolean = users.any { it.loginId == loginId }
 
+        override fun existsByStudentId(studentId: Long): Boolean = users.any { it.studentId == studentId }
+
         override fun existsByRole(role: UserRole): Boolean = users.any { role in it.roles }
+
+        override fun delete(user: User) {
+            users.removeIf { it.id == user.id }
+        }
+    }
+
+    private object EmptyStudentRepository : StudentRepository {
+        override fun save(student: Student): Student = student
+
+        override fun findById(id: Long): Student? = null
+
+        override fun findAll(): List<Student> = emptyList()
+
+        override fun searchByName(name: String): List<Student> = emptyList()
     }
 }

@@ -16,9 +16,13 @@ class UserJpaEntity(
     val id: Long,
     @Column(name = "login_id", nullable = false, unique = true, length = 50)
     var loginId: String,
+    @Column(nullable = false, length = 100)
+    var name: String,
     @Column(name = "password_hash", nullable = false, length = 100)
     var passwordHash: String,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     var status: UserStatus,
+    @Column(name = "student_id", unique = true)
+    var studentId: Long?,
 ) : BaseEntity()
