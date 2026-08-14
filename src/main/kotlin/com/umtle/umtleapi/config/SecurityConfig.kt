@@ -26,7 +26,12 @@ class SecurityConfig {
             }
             authorizeHttpRequests {
                 authorize(HttpMethod.POST, "/api/v1/auth/login", permitAll)
+                authorize(HttpMethod.POST, "/api/v1/auth/signup", permitAll)
                 authorize("/actuator/health", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/students/search", permitAll)
+                authorize(HttpMethod.GET, "/api/v1/users/pending", hasAnyRole("ADMIN", "TEACHER"))
+                authorize(HttpMethod.POST, "/api/v1/users/*/approve", hasAnyRole("ADMIN", "TEACHER"))
+                authorize(HttpMethod.POST, "/api/v1/users/*/reject", hasAnyRole("ADMIN", "TEACHER"))
                 authorize(HttpMethod.POST, "/api/v1/lessons/*/attendances", hasRole("TEACHER"))
                 authorize(HttpMethod.GET, "/api/v1/lessons/*/attendances", hasAnyRole("ADMIN", "TEACHER"))
                 authorize(HttpMethod.GET, "/api/v1/attendances", hasAnyRole("ADMIN", "TEACHER"))

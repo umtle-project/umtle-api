@@ -1,6 +1,7 @@
 package com.umtle.umtleapi.user.presentation
 
 import com.umtle.umtleapi.user.application.AuthService
+import com.umtle.umtleapi.user.application.UserService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/auth")
 class AuthController(
     private val authService: AuthService,
+    private val userService: UserService,
 ) {
     private val securityContextRepository = HttpSessionSecurityContextRepository()
 
@@ -44,6 +46,21 @@ class AuthController(
         securityContextRepository.saveContext(context, servletRequest, servletResponse)
         return UserResponse.from(user)
     }
+
+    @PostMapping("/signup")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun signup(
+        @Valid @RequestBody request: SignupRequest,
+    ): UserResponse =
+        UserResponse.from(
+            userService.signup(
+                loginId = request.loginId,
+                password = request.password,
+                name = request.name,
+                role = request.role,
+                studentId = request.studentId,
+            ),
+        )
 
     @GetMapping("/me")
     fun me(): UserResponse {

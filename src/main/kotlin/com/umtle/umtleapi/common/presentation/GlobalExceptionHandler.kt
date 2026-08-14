@@ -9,6 +9,9 @@ import com.umtle.umtleapi.homework.application.UnassignedHomeworkStudentExceptio
 import com.umtle.umtleapi.homework.presentation.InvalidHomeworkRequestException
 import com.umtle.umtleapi.lesson.domain.InvalidLessonStateTransitionException
 import com.umtle.umtleapi.user.application.DuplicateLoginIdException
+import com.umtle.umtleapi.user.application.DuplicateStudentClaimException
+import com.umtle.umtleapi.user.application.InvalidSignupRequestException
+import com.umtle.umtleapi.user.application.InvalidUserApprovalException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -23,6 +26,18 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateLoginIdException::class)
     fun handleDuplicateLoginId(exception: DuplicateLoginIdException): ProblemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.message ?: "Duplicate loginId")
+
+    @ExceptionHandler(DuplicateStudentClaimException::class)
+    fun handleDuplicateStudentClaim(exception: DuplicateStudentClaimException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.message ?: "Duplicate student claim")
+
+    @ExceptionHandler(InvalidSignupRequestException::class)
+    fun handleInvalidSignupRequest(exception: InvalidSignupRequestException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.message ?: "Invalid signup request")
+
+    @ExceptionHandler(InvalidUserApprovalException::class)
+    fun handleInvalidUserApproval(exception: InvalidUserApprovalException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.message ?: "Invalid user approval")
 
     @ExceptionHandler(InvalidLessonStateTransitionException::class)
     fun handleInvalidLessonStateTransition(exception: InvalidLessonStateTransitionException): ProblemDetail =

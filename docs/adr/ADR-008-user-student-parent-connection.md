@@ -85,3 +85,4 @@ Accepted (2026-08-12)
 - `docs/REQUIREMENTS.md` §5
 - `docs/USER_ROLES.md` §4
 - `docs/tasks/TASK-006-attendance-management.md`, `docs/tasks/TASK-007-homework-management.md` (Out of Scope로 미뤄둔 항목의 근거)
+- `docs/adr/ADR-009-user-signup-and-approval.md` — Decision 4("두 연결 모두 관리자만 생성·해제할 수 있다")를 확장해, 선생님의 회원가입 승인도 연결을 생성하는 유효한 경로로 추가한다. 학부모-학생 연결을 저장하는 JPA Entity는 `TASK-008` 구현 시 `ParentStudentJpaEntity`(`id + parentUserId + studentId`)라는 이름으로 실제 도입되었다 — 이 Decision 3이 예시로 든 `UserChildJpaEntity`라는 이름 자체는 채택되지 않았다.

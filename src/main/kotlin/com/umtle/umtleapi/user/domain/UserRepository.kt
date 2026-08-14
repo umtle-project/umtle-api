@@ -7,7 +7,13 @@ interface UserRepository {
 
     fun findByLoginId(loginId: String): User?
 
+    fun findPendingByRoles(roles: Set<UserRole>): List<User>
+
     fun existsByLoginId(loginId: String): Boolean
 
+    fun existsByStudentId(studentId: Long): Boolean
+
     fun existsByRole(role: UserRole): Boolean
+
+    fun delete(user: User)
 }

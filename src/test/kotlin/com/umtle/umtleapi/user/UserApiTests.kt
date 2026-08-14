@@ -62,12 +62,14 @@ class UserApiTests {
                                 mapOf(
                                     "loginId" to "teacher-api-test",
                                     "password" to "teacher-password",
+                                    "name" to "테스트 선생님",
                                     "roles" to listOf("TEACHER"),
                                 ),
                             ),
                         ),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.loginId").value("teacher-api-test"))
+                .andExpect(jsonPath("$.name").value("테스트 선생님"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist())
                 .andReturn()
 
@@ -81,6 +83,293 @@ class UserApiTests {
             .perform(get("/api/v1/users/$userId").session(session))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.loginId").value("teacher-api-test"))
+            .andExpect(jsonPath("$.name").value("테스트 선생님"))
+    }
+
+    @Test
+    fun `teacher signup stays pending until admin approval`() {
+        val loginId = "pending-teacher-${shortId()}"
+
+        val signupResponse =
+            mockMvc
+                .perform(
+                    post("/api/v1/auth/signup")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(
+                            objectMapper.writeValueAsString(
+                                mapOf(
+                                    "loginId" to loginId,
+                                    "password" to "teacher-password",
+                                    "name" to "가입 선생님",
+                                    "role" to "TEACHER",
+                                ),
+                            ),
+                        ),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.loginId").value(loginId))
+                .andExpect(jsonPath("$.name").value("가입 선생님"))
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andReturn()
+
+        mockMvc
+            .perform(login(loginId, "teacher-password"))
+            .andExpect(status().isUnauthorized)
+
+        val userId =
+            objectMapper
+                .readTree(signupResponse.response.contentAsString)
+                .get("id")
+                .asLong()
+
+        val adminSession = adminSession()
+
+        mockMvc
+            .perform(get("/api/v1/users/pending?role=TEACHER").session(adminSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.loginId == '$loginId')]").exists())
+
+        mockMvc
+            .perform(post("/api/v1/users/$userId/approve").with(csrf()).session(adminSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value("ACTIVE"))
+
+        mockMvc
+            .perform(login(loginId, "teacher-password"))
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `student signup claims a student and active teacher approves it`() {
+        val adminSession = adminSession()
+        val studentId = createStudent("승인학생-${shortId()}", adminSession)
+        val teacherLoginId = "approval-teacher-${shortId()}"
+        createUser(teacherLoginId, "teacher-password", "승인 선생님", listOf("TEACHER"), adminSession)
+        val teacherSession = loginSession(teacherLoginId, "teacher-password")
+        val loginId = "pending-student-${shortId()}"
+
+        val signupResponse =
+            mockMvc
+                .perform(
+                    post("/api/v1/auth/signup")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(
+                            objectMapper.writeValueAsString(
+                                mapOf(
+                                    "loginId" to loginId,
+                                    "password" to "student-password",
+                                    "name" to "가입 학생",
+                                    "role" to "STUDENT",
+                                    "studentId" to studentId,
+                                ),
+                            ),
+                        ),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.studentId").value(studentId))
+                .andReturn()
+
+        val userId =
+            objectMapper
+                .readTree(signupResponse.response.contentAsString)
+                .get("id")
+                .asLong()
+
+        mockMvc
+            .perform(get("/api/v1/users/pending?role=STUDENT_PARENT").session(teacherSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.loginId == '$loginId')]").exists())
+
+        mockMvc
+            .perform(post("/api/v1/users/$userId/approve").with(csrf()).session(teacherSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value("ACTIVE"))
+            .andExpect(jsonPath("$.studentId").value(studentId))
+
+        mockMvc
+            .perform(login(loginId, "student-password"))
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `teacher cannot approve teacher signup and admin cannot approve student signup`() {
+        val adminSession = adminSession()
+        val teacherLoginId = "boundary-teacher-${shortId()}"
+        createUser(teacherLoginId, "teacher-password", "경계 선생님", listOf("TEACHER"), adminSession)
+        val teacherSession = loginSession(teacherLoginId, "teacher-password")
+
+        val pendingTeacherId =
+            signup(
+                mapOf(
+                    "loginId" to "pending-teacher-boundary-${shortId()}",
+                    "password" to "teacher-password",
+                    "name" to "대기 선생님",
+                    "role" to "TEACHER",
+                ),
+            )
+
+        mockMvc
+            .perform(post("/api/v1/users/$pendingTeacherId/approve").with(csrf()).session(teacherSession))
+            .andExpect(status().isForbidden)
+
+        val studentId = createStudent("권한학생-${shortId()}", adminSession)
+        val pendingStudentId =
+            signup(
+                mapOf(
+                    "loginId" to "pending-student-boundary-${shortId()}",
+                    "password" to "student-password",
+                    "name" to "대기 학생",
+                    "role" to "STUDENT",
+                    "studentId" to studentId,
+                ),
+            )
+
+        mockMvc
+            .perform(post("/api/v1/users/$pendingStudentId/approve").with(csrf()).session(adminSession))
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `rejecting student signup releases the student claim`() {
+        val adminSession = adminSession()
+        val studentId = createStudent("재가입학생-${shortId()}", adminSession)
+        val teacherLoginId = "release-teacher-${shortId()}"
+        createUser(teacherLoginId, "teacher-password", "재가입 선생님", listOf("TEACHER"), adminSession)
+        val teacherSession = loginSession(teacherLoginId, "teacher-password")
+        val pendingStudentId =
+            signup(
+                mapOf(
+                    "loginId" to "student-release-a-${shortId()}",
+                    "password" to "student-password",
+                    "name" to "학생A",
+                    "role" to "STUDENT",
+                    "studentId" to studentId,
+                ),
+            )
+
+        mockMvc
+            .perform(post("/api/v1/users/$pendingStudentId/reject").with(csrf()).session(teacherSession))
+            .andExpect(status().isNoContent)
+
+        signupStudent("student-release-b-${shortId()}", studentId)
+    }
+
+    @Test
+    fun `parent signup stores claimed child and can be rejected by active teacher`() {
+        val adminSession = adminSession()
+        val studentId = createStudent("거절학생-${shortId()}", adminSession)
+        val teacherLoginId = "reject-teacher-${shortId()}"
+        createUser(teacherLoginId, "teacher-password", "거절 선생님", listOf("TEACHER"), adminSession)
+        val teacherSession = loginSession(teacherLoginId, "teacher-password")
+        val loginId = "pending-parent-${shortId()}"
+
+        val signupResponse =
+            mockMvc
+                .perform(
+                    post("/api/v1/auth/signup")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(
+                            objectMapper.writeValueAsString(
+                                mapOf(
+                                    "loginId" to loginId,
+                                    "password" to "parent-password",
+                                    "name" to "가입 학부모",
+                                    "role" to "PARENT",
+                                    "studentId" to studentId,
+                                ),
+                            ),
+                        ),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.childStudentIds[0]").value(studentId))
+                .andReturn()
+
+        val userId =
+            objectMapper
+                .readTree(signupResponse.response.contentAsString)
+                .get("id")
+                .asLong()
+
+        mockMvc
+            .perform(post("/api/v1/users/$userId/reject").with(csrf()).session(teacherSession))
+            .andExpect(status().isNoContent)
+
+        mockMvc
+            .perform(login(loginId, "parent-password"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `signup rejects invalid roles and duplicate student claims`() {
+        val adminSession = adminSession()
+        val studentId = createStudent("중복학생-${shortId()}", adminSession)
+
+        mockMvc
+            .perform(
+                post("/api/v1/auth/signup")
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            mapOf(
+                                "loginId" to "admin-signup-${shortId()}",
+                                "password" to "admin-password",
+                                "name" to "자가 관리자",
+                                "role" to "ADMIN",
+                            ),
+                        ),
+                    ),
+            ).andExpect(status().isBadRequest)
+
+        mockMvc
+            .perform(
+                post("/api/v1/auth/signup")
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            mapOf(
+                                "loginId" to "student-without-claim-${shortId()}",
+                                "password" to "student-password",
+                                "name" to "학생",
+                                "role" to "STUDENT",
+                            ),
+                        ),
+                    ),
+            ).andExpect(status().isBadRequest)
+
+        signupStudent("student-claim-a-${shortId()}", studentId)
+        mockMvc
+            .perform(
+                post("/api/v1/auth/signup")
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            mapOf(
+                                "loginId" to "student-claim-b-${shortId()}",
+                                "password" to "student-password",
+                                "name" to "학생B",
+                                "role" to "STUDENT",
+                                "studentId" to studentId,
+                            ),
+                        ),
+                    ),
+            ).andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `student search is public and returns only id and name`() {
+        val adminSession = adminSession()
+        createStudent("검색학생-${shortId()}", adminSession)
+
+        mockMvc
+            .perform(get("/api/v1/students/search?name=검색학생"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].id").exists())
+            .andExpect(jsonPath("$[0].name").exists())
+            .andExpect(jsonPath("$[0].status").doesNotExist())
     }
 
     @Test
@@ -137,6 +426,95 @@ class UserApiTests {
                     .toMockHttpSession()
             }
 
+    private fun loginSession(
+        loginId: String,
+        password: String,
+    ): MockHttpSession =
+        mockMvc
+            .perform(login(loginId, password))
+            .andExpect(status().isOk)
+            .andReturn()
+            .request
+            .session
+            .toMockHttpSession()
+
+    private fun createUser(
+        loginId: String,
+        password: String,
+        name: String,
+        roles: List<String>,
+        session: MockHttpSession,
+    ): Long {
+        val response =
+            mockMvc
+                .perform(
+                    post("/api/v1/users")
+                        .with(csrf())
+                        .session(session)
+                        .contentType("application/json")
+                        .content(
+                            objectMapper.writeValueAsString(
+                                mapOf("loginId" to loginId, "password" to password, "name" to name, "roles" to roles),
+                            ),
+                        ),
+                ).andExpect(status().isCreated)
+                .andReturn()
+        return objectMapper.readTree(response.response.contentAsString).get("id").asLong()
+    }
+
+    private fun createStudent(
+        name: String,
+        session: MockHttpSession,
+    ): Long {
+        val response =
+            mockMvc
+                .perform(
+                    post("/api/v1/students")
+                        .with(csrf())
+                        .session(session)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(mapOf("name" to name))),
+                ).andExpect(status().isCreated)
+                .andReturn()
+        return objectMapper.readTree(response.response.contentAsString).get("id").asLong()
+    }
+
+    private fun signupStudent(
+        loginId: String,
+        studentId: Long,
+    ) {
+        mockMvc
+            .perform(
+                post("/api/v1/auth/signup")
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            mapOf(
+                                "loginId" to loginId,
+                                "password" to "student-password",
+                                "name" to "학생A",
+                                "role" to "STUDENT",
+                                "studentId" to studentId,
+                            ),
+                        ),
+                    ),
+            ).andExpect(status().isCreated)
+    }
+
+    private fun signup(payload: Map<String, Any>): Long {
+        val response =
+            mockMvc
+                .perform(
+                    post("/api/v1/auth/signup")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(payload)),
+                ).andExpect(status().isCreated)
+                .andReturn()
+        return objectMapper.readTree(response.response.contentAsString).get("id").asLong()
+    }
+
     private fun login(
         loginId: String,
         password: String,
@@ -146,4 +524,10 @@ class UserApiTests {
         .content(objectMapper.writeValueAsString(mapOf("loginId" to loginId, "password" to password)))
 
     private fun HttpSession?.toMockHttpSession(): MockHttpSession = this as MockHttpSession
+
+    private fun shortId(): String =
+        java.util.UUID
+            .randomUUID()
+            .toString()
+            .take(8)
 }

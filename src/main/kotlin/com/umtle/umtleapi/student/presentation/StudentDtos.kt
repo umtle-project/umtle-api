@@ -31,3 +31,16 @@ data class StudentResponse(
             )
     }
 }
+
+data class StudentSearchResponse(
+    val id: Long,
+    val name: String,
+) {
+    companion object {
+        fun from(student: Student) =
+            StudentSearchResponse(
+                id = student.id,
+                name = student.name,
+            )
+    }
+}
