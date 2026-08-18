@@ -1,8 +1,11 @@
 package com.umtle.umtleapi.user
 
 import com.umtle.umtleapi.TestcontainersConfiguration
+import jakarta.persistence.EntityManagerFactory
 import jakarta.servlet.http.HttpSession
 import org.hamcrest.Matchers.notNullValue
+import org.hibernate.SessionFactory
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -29,6 +32,9 @@ class UserApiTests {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var entityManagerFactory: EntityManagerFactory
 
     @Test
     fun `login with valid credentials issues a session`() {
@@ -140,6 +146,40 @@ class UserApiTests {
     }
 
     @Test
+    fun `pending users query loads authorization and response data in one statement`() {
+        val adminSession = adminSession()
+        val loginId = "pending-query-count-${shortId()}"
+
+        mockMvc
+            .perform(
+                post("/api/v1/auth/signup")
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            mapOf(
+                                "loginId" to loginId,
+                                "password" to "teacher-password",
+                                "name" to "쿼리수 선생님",
+                                "role" to "TEACHER",
+                            ),
+                        ),
+                    ),
+            ).andExpect(status().isCreated)
+
+        val statistics = entityManagerFactory.unwrap(SessionFactory::class.java).statistics
+        statistics.isStatisticsEnabled = true
+        statistics.clear()
+
+        mockMvc
+            .perform(get("/api/v1/users/pending?role=TEACHER").session(adminSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.loginId == '$loginId')]").exists())
+
+        assertEquals(1L, statistics.prepareStatementCount)
+    }
+
+    @Test
     fun `student signup claims a student and active teacher approves it`() {
         val adminSession = adminSession()
         val studentId = createStudent("승인학생-${shortId()}", adminSession)
@@ -193,7 +233,62 @@ class UserApiTests {
     }
 
     @Test
-    fun `teacher cannot approve teacher signup and admin cannot approve student signup`() {
+    fun `student and parent approval uses pending user id not claimed student id`() {
+        val adminSession = adminSession()
+        val teacherLoginId = "approval-id-teacher-${shortId()}"
+        createUser(teacherLoginId, "teacher-password", "승인ID 선생님", listOf("TEACHER"), adminSession)
+        val teacherSession = loginSession(teacherLoginId, "teacher-password")
+        val studentId = createStudent("승인ID학생-${shortId()}", adminSession)
+        val childStudentId = createStudent("승인ID자녀-${shortId()}", adminSession)
+        val pendingStudentLoginId = "approval-id-student-${shortId()}"
+        val pendingParentLoginId = "approval-id-parent-${shortId()}"
+
+        val pendingStudentUserId =
+            signup(
+                mapOf(
+                    "loginId" to pendingStudentLoginId,
+                    "password" to "student-password",
+                    "name" to "대기 학생",
+                    "role" to "STUDENT",
+                    "studentId" to studentId,
+                ),
+            )
+        val pendingParentUserId =
+            signup(
+                mapOf(
+                    "loginId" to pendingParentLoginId,
+                    "password" to "parent-password",
+                    "name" to "대기 학부모",
+                    "role" to "PARENT",
+                    "studentId" to childStudentId,
+                ),
+            )
+
+        mockMvc
+            .perform(get("/api/v1/users/pending?role=STUDENT_PARENT").session(teacherSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.loginId == '$pendingStudentLoginId')].id").value(pendingStudentUserId.toString()))
+            .andExpect(jsonPath("$[?(@.loginId == '$pendingStudentLoginId')].studentId").value(studentId.toString()))
+            .andExpect(jsonPath("$[?(@.loginId == '$pendingParentLoginId')].id").value(pendingParentUserId.toString()))
+            .andExpect(jsonPath("$[?(@.loginId == '$pendingParentLoginId')].childStudentIds[0]").value(childStudentId.toString()))
+
+        mockMvc
+            .perform(post("/api/v1/users/$pendingStudentUserId/approve").with(csrf()).session(teacherSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(pendingStudentUserId.toString()))
+            .andExpect(jsonPath("$.status").value("ACTIVE"))
+            .andExpect(jsonPath("$.studentId").value(studentId.toString()))
+
+        mockMvc
+            .perform(post("/api/v1/users/$pendingParentUserId/approve").with(csrf()).session(teacherSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(pendingParentUserId.toString()))
+            .andExpect(jsonPath("$.status").value("ACTIVE"))
+            .andExpect(jsonPath("$.childStudentIds[0]").value(childStudentId.toString()))
+    }
+
+    @Test
+    fun `teacher cannot approve teacher signup and admin can approve student signup`() {
         val adminSession = adminSession()
         val teacherLoginId = "boundary-teacher-${shortId()}"
         createUser(teacherLoginId, "teacher-password", "경계 선생님", listOf("TEACHER"), adminSession)
@@ -226,8 +321,15 @@ class UserApiTests {
             )
 
         mockMvc
+            .perform(get("/api/v1/users/pending?role=STUDENT_PARENT").session(adminSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.id == '$pendingStudentId')].studentId").value(studentId.toString()))
+
+        mockMvc
             .perform(post("/api/v1/users/$pendingStudentId/approve").with(csrf()).session(adminSession))
-            .andExpect(status().isForbidden)
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value("ACTIVE"))
+            .andExpect(jsonPath("$.studentId").value(studentId.toString()))
     }
 
     @Test

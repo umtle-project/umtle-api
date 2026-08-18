@@ -15,7 +15,9 @@ class LessonService(
 ) {
     @Transactional
     fun registerLesson(classId: Long): Lesson {
-        classroomRepository.findById(classId) ?: throw ClassroomNotFoundException(classId)
+        if (!classroomRepository.existsById(classId)) {
+            throw ClassroomNotFoundException(classId)
+        }
         return lessonRepository.save(Lesson.register(classId))
     }
 

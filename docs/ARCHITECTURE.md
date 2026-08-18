@@ -149,7 +149,7 @@ Presentation → Application → Domain ← Infrastructure
 - 마이그레이션: Flyway
 - 인증/인가 기반: Spring Security (세부 정책은 미정)
 - 검증: Spring Validation
-- 식별자: TSID(`com.github.f4b6a3:tsid-creator`)를 `Long`(BIGINT)으로 저장. Domain 계층의 factory 메서드가 Aggregate 생성 시점에 직접 할당하며, Hibernate의 ID 생성 전략에 위임하지 않는다 (`docs/adr/ADR-002-tsid-as-identifier.md`).
+- 식별자: TSID(`com.github.f4b6a3:tsid-creator`)를 `Long`(BIGINT)으로 저장. Domain 계층의 factory 메서드가 Aggregate 생성 시점에 직접 할당하며, Hibernate의 ID 생성 전략에 위임하지 않는다 (`docs/adr/ADR-002-tsid-as-identifier.md`). JSON API 응답에서는 JavaScript number 정밀도 손실을 막기 위해 `Long` 값을 문자열로 직렬화한다. 요청 path variable과 request body의 id 값은 기존처럼 서버에서 `Long`으로 변환해 처리한다.
 
 다음 기술은 현재 범위에서 제외하며, 구현되지 않은 상태에서 임의로 도입하지 않는다.
 

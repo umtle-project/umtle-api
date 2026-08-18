@@ -2,6 +2,7 @@ package com.umtle.umtleapi.user.application
 
 import com.umtle.umtleapi.student.domain.StudentNotFoundException
 import com.umtle.umtleapi.student.domain.StudentRepository
+import com.umtle.umtleapi.user.domain.PendingUserQuery
 import com.umtle.umtleapi.user.domain.User
 import com.umtle.umtleapi.user.domain.UserNotFoundException
 import com.umtle.umtleapi.user.domain.UserRepository
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserService(
     private val userRepository: UserRepository,
+    private val pendingUserQuery: PendingUserQuery,
     private val studentRepository: StudentRepository,
     private val passwordEncoder: PasswordEncoder,
 ) {
@@ -62,7 +64,9 @@ class UserService(
 
         val claimedStudentId =
             studentId?.also {
-                studentRepository.findById(it) ?: throw StudentNotFoundException(it)
+                if (!studentRepository.existsById(it)) {
+                    throw StudentNotFoundException(it)
+                }
             }
 
         if (role == UserRole.STUDENT && claimedStudentId != null && userRepository.existsByStudentId(claimedStudentId)) {
@@ -91,18 +95,17 @@ class UserService(
         currentLoginId: String,
         role: PendingUserRoleFilter,
     ): List<User> {
-        val currentUser = currentUser(currentLoginId)
-        return when (role) {
-            PendingUserRoleFilter.TEACHER -> {
-                requireAdmin(currentUser)
-                userRepository.findPendingByRoles(setOf(UserRole.TEACHER))
+        val (requiredRoles, pendingRoles) =
+            when (role) {
+                PendingUserRoleFilter.TEACHER -> setOf(UserRole.ADMIN) to setOf(UserRole.TEACHER)
+                PendingUserRoleFilter.STUDENT_PARENT -> setOf(UserRole.ADMIN, UserRole.TEACHER) to setOf(UserRole.STUDENT, UserRole.PARENT)
             }
 
-            PendingUserRoleFilter.STUDENT_PARENT -> {
-                requireTeacher(currentUser)
-                userRepository.findPendingByRoles(setOf(UserRole.STUDENT, UserRole.PARENT))
-            }
-        }
+        return pendingUserQuery.findForApprover(
+            loginId = currentLoginId,
+            approverRoles = requiredRoles,
+            pendingRoles = pendingRoles,
+        ) ?: throw AccessDeniedException("Access denied")
     }
 
     @Transactional
@@ -139,7 +142,7 @@ class UserService(
         }
         when {
             UserRole.TEACHER in target.roles -> requireAdmin(currentUser)
-            target.roles.any { it == UserRole.STUDENT || it == UserRole.PARENT } -> requireTeacher(currentUser)
+            target.roles.any { it == UserRole.STUDENT || it == UserRole.PARENT } -> requireAdminOrTeacher(currentUser)
             else -> throw AccessDeniedException("Access denied")
         }
     }
@@ -150,8 +153,8 @@ class UserService(
         }
     }
 
-    private fun requireTeacher(user: User) {
-        if (UserRole.TEACHER !in user.roles || user.status != UserStatus.ACTIVE) {
+    private fun requireAdminOrTeacher(user: User) {
+        if (user.status != UserStatus.ACTIVE || (UserRole.ADMIN !in user.roles && UserRole.TEACHER !in user.roles)) {
             throw AccessDeniedException("Access denied")
         }
     }

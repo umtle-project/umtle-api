@@ -49,7 +49,9 @@ class ClassroomService(
         studentId: Long,
     ): Classroom {
         val classroom = getClass(id)
-        studentRepository.findById(studentId) ?: throw StudentNotFoundException(studentId)
+        if (!studentRepository.existsById(studentId)) {
+            throw StudentNotFoundException(studentId)
+        }
         classroom.assignStudent(studentId)
         return classroomRepository.save(classroom)
     }
@@ -70,8 +72,10 @@ class ClassroomService(
         teacherId: Long,
     ): Classroom {
         val classroom = getClass(id)
-        val teacher = userRepository.findById(teacherId) ?: throw UserNotFoundException(teacherId)
-        if (UserRole.TEACHER !in teacher.roles) {
+        if (!userRepository.existsById(teacherId)) {
+            throw UserNotFoundException(teacherId)
+        }
+        if (!userRepository.existsByIdAndRole(teacherId, UserRole.TEACHER)) {
             throw InvalidTeacherAssignmentException(teacherId)
         }
 
