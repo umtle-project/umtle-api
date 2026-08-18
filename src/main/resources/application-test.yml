@@ -10,3 +10,7 @@ umtle:
   bootstrap-admin:
     login-id: test-admin
     password: test-admin-password
+
+logging:
+  level:
+    org.hibernate.SQL: warn
