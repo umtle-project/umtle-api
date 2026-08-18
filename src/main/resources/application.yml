@@ -6,6 +6,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
 
 management:
   endpoints:
@@ -15,3 +18,9 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+  pattern:
+    level: "%5p [%X{traceId:-}]"
