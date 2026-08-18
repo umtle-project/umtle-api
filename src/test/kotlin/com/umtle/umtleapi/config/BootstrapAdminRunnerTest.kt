@@ -3,6 +3,7 @@ package com.umtle.umtleapi.config
 import com.umtle.umtleapi.student.domain.Student
 import com.umtle.umtleapi.student.domain.StudentRepository
 import com.umtle.umtleapi.user.application.UserService
+import com.umtle.umtleapi.user.domain.PendingUserQuery
 import com.umtle.umtleapi.user.domain.User
 import com.umtle.umtleapi.user.domain.UserRepository
 import com.umtle.umtleapi.user.domain.UserRole
@@ -19,7 +20,13 @@ class BootstrapAdminRunnerTest {
         val runner =
             BootstrapAdminRunner(
                 userRepository = repository,
-                userService = UserService(repository, EmptyStudentRepository, BCryptPasswordEncoder()),
+                userService =
+                    UserService(
+                        repository,
+                        InMemoryPendingUserQuery(repository),
+                        EmptyStudentRepository,
+                        BCryptPasswordEncoder(),
+                    ),
                 loginId = "admin",
                 password = "admin-password",
             )
@@ -38,7 +45,13 @@ class BootstrapAdminRunnerTest {
         val runner =
             BootstrapAdminRunner(
                 userRepository = repository,
-                userService = UserService(repository, EmptyStudentRepository, BCryptPasswordEncoder()),
+                userService =
+                    UserService(
+                        repository,
+                        InMemoryPendingUserQuery(repository),
+                        EmptyStudentRepository,
+                        BCryptPasswordEncoder(),
+                    ),
                 loginId = "new-admin",
                 password = "admin-password",
             )
@@ -74,8 +87,12 @@ class BootstrapAdminRunnerTest {
 
         override fun findByLoginId(loginId: String): User? = users.firstOrNull { it.loginId == loginId }
 
-        override fun findPendingByRoles(roles: Set<UserRole>): List<User> =
-            users.filter { it.status == UserStatus.PENDING && it.roles.any { role -> role in roles } }
+        override fun existsById(id: Long): Boolean = users.any { it.id == id }
+
+        override fun existsByIdAndRole(
+            id: Long,
+            role: UserRole,
+        ): Boolean = users.any { it.id == id && role in it.roles }
 
         override fun existsByLoginId(loginId: String): Boolean = users.any { it.loginId == loginId }
 
@@ -88,10 +105,28 @@ class BootstrapAdminRunnerTest {
         }
     }
 
+    private class InMemoryPendingUserQuery(
+        private val repository: InMemoryUserRepository,
+    ) : PendingUserQuery {
+        override fun findForApprover(
+            loginId: String,
+            approverRoles: Set<UserRole>,
+            pendingRoles: Set<UserRole>,
+        ): List<User>? {
+            val currentUser = repository.users.firstOrNull { it.loginId == loginId } ?: return null
+            if (currentUser.status != UserStatus.ACTIVE || currentUser.roles.none { it in approverRoles }) {
+                return null
+            }
+            return repository.users.filter { it.status == UserStatus.PENDING && it.roles.any { role -> role in pendingRoles } }
+        }
+    }
+
     private object EmptyStudentRepository : StudentRepository {
         override fun save(student: Student): Student = student
 
         override fun findById(id: Long): Student? = null
+
+        override fun existsById(id: Long): Boolean = false
 
         override fun findAll(): List<Student> = emptyList()
 

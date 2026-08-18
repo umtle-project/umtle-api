@@ -4,7 +4,6 @@ import com.umtle.umtleapi.attendance.domain.Attendance
 import com.umtle.umtleapi.attendance.domain.AttendanceNotFoundException
 import com.umtle.umtleapi.attendance.domain.AttendanceRepository
 import com.umtle.umtleapi.attendance.domain.AttendanceStatus
-import com.umtle.umtleapi.classroom.domain.ClassroomNotFoundException
 import com.umtle.umtleapi.classroom.domain.ClassroomRepository
 import com.umtle.umtleapi.lesson.domain.LessonNotFoundException
 import com.umtle.umtleapi.lesson.domain.LessonRepository
@@ -27,10 +26,11 @@ class AttendanceService(
         status: AttendanceStatus,
     ): Attendance {
         val lesson = lessonRepository.findById(lessonId) ?: throw LessonNotFoundException(lessonId)
-        studentRepository.findById(studentId) ?: throw StudentNotFoundException(studentId)
-        val classroom = classroomRepository.findById(lesson.classId) ?: throw ClassroomNotFoundException(lesson.classId)
+        if (!studentRepository.existsById(studentId)) {
+            throw StudentNotFoundException(studentId)
+        }
 
-        if (studentId !in classroom.studentIds) {
+        if (!classroomRepository.existsStudentAssignment(lesson.classId, studentId)) {
             throw UnassignedAttendanceStudentException(lessonId, studentId)
         }
 

@@ -12,15 +12,54 @@ class ClassroomRepositoryAdapter(
     private val teacherJpaRepository: ClassTeacherJpaRepository,
 ) : ClassroomRepository {
     override fun save(classroom: Classroom): Classroom {
-        val savedClass = jpaRepository.save(classroom.toEntity())
+        jpaRepository.save(classroom.toEntity())
         syncStudents(classroom.id, classroom.studentIds)
         syncTeachers(classroom.id, classroom.teacherIds)
-        return savedClass.toDomain()
+        return classroom
     }
 
-    override fun findById(id: Long): Classroom? = jpaRepository.findById(id).orElse(null)?.toDomain()
+    override fun findById(id: Long): Classroom? = jpaRepository.findById(id).orElse(null)?.loadDomain()
 
-    override fun findAll(): List<Classroom> = jpaRepository.findAll().map { it.toDomain() }
+    override fun findAll(): List<Classroom> {
+        val classes = jpaRepository.findAll()
+        val classIds = classes.map { it.id }
+        val studentIdsByClassId = findStudentIdsByClassId(classIds)
+        val teacherIdsByClassId = findTeacherIdsByClassId(classIds)
+
+        return classes.map {
+            it.toDomain(
+                studentIds = studentIdsByClassId[it.id].orEmpty(),
+                teacherIds = teacherIdsByClassId[it.id].orEmpty(),
+            )
+        }
+    }
+
+    override fun existsById(id: Long): Boolean = jpaRepository.existsById(id)
+
+    override fun existsStudentAssignment(
+        classId: Long,
+        studentId: Long,
+    ): Boolean = studentJpaRepository.existsByClassIdAndStudentId(classId, studentId)
+
+    private fun findStudentIdsByClassId(classIds: List<Long>): Map<Long, Set<Long>> {
+        if (classIds.isEmpty()) {
+            return emptyMap()
+        }
+        return studentJpaRepository
+            .findByClassIdIn(classIds)
+            .groupBy { it.classId }
+            .mapValues { (_, students) -> students.map { it.studentId }.toSet() }
+    }
+
+    private fun findTeacherIdsByClassId(classIds: List<Long>): Map<Long, Set<Long>> {
+        if (classIds.isEmpty()) {
+            return emptyMap()
+        }
+        return teacherJpaRepository
+            .findByClassIdIn(classIds)
+            .groupBy { it.classId }
+            .mapValues { (_, teachers) -> teachers.map { it.teacherId }.toSet() }
+    }
 
     private fun Classroom.toEntity() =
         ClassroomJpaEntity(
@@ -29,14 +68,22 @@ class ClassroomRepositoryAdapter(
             status = status,
         )
 
-    private fun ClassroomJpaEntity.toDomain() =
-        Classroom.reconstitute(
-            id = id,
-            name = name,
-            status = status,
+    private fun ClassroomJpaEntity.loadDomain() =
+        toDomain(
             studentIds = studentJpaRepository.findByClassId(id).map { it.studentId }.toSet(),
             teacherIds = teacherJpaRepository.findByClassId(id).map { it.teacherId }.toSet(),
         )
+
+    private fun ClassroomJpaEntity.toDomain(
+        studentIds: Set<Long>,
+        teacherIds: Set<Long>,
+    ) = Classroom.reconstitute(
+        id = id,
+        name = name,
+        status = status,
+        studentIds = studentIds,
+        teacherIds = teacherIds,
+    )
 
     private fun Long.toStudentEntity(classId: Long) =
         ClassStudentJpaEntity(

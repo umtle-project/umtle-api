@@ -1,6 +1,5 @@
 package com.umtle.umtleapi.homework.application
 
-import com.umtle.umtleapi.classroom.domain.ClassroomNotFoundException
 import com.umtle.umtleapi.classroom.domain.ClassroomRepository
 import com.umtle.umtleapi.homework.domain.Homework
 import com.umtle.umtleapi.homework.domain.HomeworkNotFoundException
@@ -26,7 +25,9 @@ class HomeworkService(
         lessonId: Long?,
         title: String,
     ): Homework {
-        studentRepository.findById(studentId) ?: throw StudentNotFoundException(studentId)
+        if (!studentRepository.existsById(studentId)) {
+            throw StudentNotFoundException(studentId)
+        }
         validateLessonAssignment(studentId, lessonId)
         return homeworkRepository.save(
             Homework.assign(
@@ -67,7 +68,9 @@ class HomeworkService(
 
     @Transactional(readOnly = true)
     fun findAllByStudentId(studentId: Long): List<Homework> {
-        studentRepository.findById(studentId) ?: throw StudentNotFoundException(studentId)
+        if (!studentRepository.existsById(studentId)) {
+            throw StudentNotFoundException(studentId)
+        }
         return homeworkRepository.findAllByStudentId(studentId)
     }
 
@@ -80,8 +83,7 @@ class HomeworkService(
         }
 
         val lesson = lessonRepository.findById(lessonId) ?: throw LessonNotFoundException(lessonId)
-        val classroom = classroomRepository.findById(lesson.classId) ?: throw ClassroomNotFoundException(lesson.classId)
-        if (studentId !in classroom.studentIds) {
+        if (!classroomRepository.existsStudentAssignment(lesson.classId, studentId)) {
             throw UnassignedHomeworkStudentException(lessonId, studentId)
         }
     }

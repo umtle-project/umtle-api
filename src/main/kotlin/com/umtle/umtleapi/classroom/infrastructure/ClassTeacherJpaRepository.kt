@@ -4,4 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface ClassTeacherJpaRepository : JpaRepository<ClassTeacherJpaEntity, Long> {
     fun findByClassId(classId: Long): List<ClassTeacherJpaEntity>
+
+    fun findByClassIdIn(classIds: Collection<Long>): List<ClassTeacherJpaEntity>
 }

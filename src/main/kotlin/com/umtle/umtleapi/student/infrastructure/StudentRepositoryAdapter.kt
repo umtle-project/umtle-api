@@ -12,6 +12,8 @@ class StudentRepositoryAdapter(
 
     override fun findById(id: Long): Student? = jpaRepository.findById(id).orElse(null)?.toDomain()
 
+    override fun existsById(id: Long): Boolean = jpaRepository.existsById(id)
+
     override fun findAll(): List<Student> = jpaRepository.findAll().map { it.toDomain() }
 
     override fun searchByName(name: String): List<Student> =
