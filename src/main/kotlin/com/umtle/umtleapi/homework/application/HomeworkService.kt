@@ -82,7 +82,8 @@ class HomeworkService(
             return
         }
 
-        val lesson = lessonRepository.findById(lessonId) ?: throw LessonNotFoundException(lessonId)
+        val lesson =
+            lessonRepository.findById(lessonId) ?: throw LessonNotFoundException(lessonId)
         if (!classroomRepository.existsStudentAssignment(lesson.classId, studentId)) {
             throw UnassignedHomeworkStudentException(lessonId, studentId)
         }

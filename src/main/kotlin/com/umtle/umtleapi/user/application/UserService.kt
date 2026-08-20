@@ -65,11 +65,16 @@ class UserService(
 
         val claimedStudentId = resolveClaimedStudentId(role, studentId, name)
 
-        if (role == UserRole.STUDENT && claimedStudentId != null && userRepository.existsByStudentId(claimedStudentId)) {
+        if (role == UserRole.STUDENT && claimedStudentId != null &&
+            userRepository.existsByStudentId(
+                claimedStudentId,
+            )
+        ) {
             throw DuplicateStudentClaimException(claimedStudentId)
         }
 
-        val childStudentIds = if (role == UserRole.PARENT && claimedStudentId != null) setOf(claimedStudentId) else emptySet()
+        val childStudentIds =
+            if (role == UserRole.PARENT && claimedStudentId != null) setOf(claimedStudentId) else emptySet()
 
         return userRepository.save(
             User.signupPending(
@@ -115,8 +120,16 @@ class UserService(
     ): List<User> {
         val (requiredRoles, pendingRoles) =
             when (role) {
-                PendingUserRoleFilter.TEACHER -> setOf(UserRole.ADMIN) to setOf(UserRole.TEACHER)
-                PendingUserRoleFilter.STUDENT_PARENT -> setOf(UserRole.ADMIN, UserRole.TEACHER) to setOf(UserRole.STUDENT, UserRole.PARENT)
+                PendingUserRoleFilter.TEACHER -> {
+                    setOf(UserRole.ADMIN) to setOf(UserRole.TEACHER)
+                }
+
+                PendingUserRoleFilter.STUDENT_PARENT -> {
+                    setOf(
+                        UserRole.ADMIN,
+                        UserRole.TEACHER,
+                    ) to setOf(UserRole.STUDENT, UserRole.PARENT)
+                }
             }
 
         return pendingUserQuery.findForApprover(
@@ -159,9 +172,19 @@ class UserService(
             throw InvalidUserApprovalException("대기 상태의 사용자만 승인 또는 거절할 수 있습니다.")
         }
         when {
-            UserRole.TEACHER in target.roles -> requireAdmin(currentUser)
-            target.roles.any { it == UserRole.STUDENT || it == UserRole.PARENT } -> requireAdminOrTeacher(currentUser)
-            else -> throw AccessDeniedException("Access denied")
+            UserRole.TEACHER in target.roles -> {
+                requireAdmin(currentUser)
+            }
+
+            target.roles.any { it == UserRole.STUDENT || it == UserRole.PARENT } -> {
+                requireAdminOrTeacher(
+                    currentUser,
+                )
+            }
+
+            else -> {
+                throw AccessDeniedException("Access denied")
+            }
         }
     }
 
