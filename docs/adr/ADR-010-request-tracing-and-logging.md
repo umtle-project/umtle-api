@@ -38,7 +38,7 @@ Accepted
    | prod | 미정 | `application-prod.yml`이 아직 placeholder — 배포 타겟이 정해질 때 함께 결정 |
 
    root 레벨은 Spring Boot 기본값(INFO)을 그대로 둔다.
-8. **예상치 못한 예외 로깅**: `GlobalExceptionHandler`에 `@ExceptionHandler(Exception::class)` catch-all을 추가하지 않는다(이유는 Considered Alternatives 참고). 대신 `RequestLoggingFilter`가 `chain.doFilter(...)` 호출을 `try/catch`로 감싸, 어떤 `HandlerExceptionResolver`도 처리하지 못하고 필터 체인 밖으로 전파되는 예외만 ERROR 레벨로 스택트레이스와 함께 1회 로깅한 뒤 그대로 다시 던진다. 이미 `GlobalExceptionHandler`가 매핑해 4xx로 응답하는 도메인 예외들은 이 필터의 catch에 도달하지 않으므로 별도 로깅을 추가하지 않는다 — 접근 로그의 상태 코드로 4xx 발생 여부를 이미 알 수 있다.
+8. **예상치 못한 예외 로깅**: `GlobalExceptionHandler`에 `@ExceptionHandler(Exception::class)` catch-all을 추가하지 않는다(이유는 Considered Alternatives 참고). 대신 `RequestLoggingFilter`가 `chain.doFilter(...)` 호출을 `try/catch`로 감싸, 어떤 `HandlerExceptionResolver`도 처리하지 못하고 필터 체인 밖으로 전파되는 예외만 ERROR 레벨로 스택트레이스와 함께 1회 로깅한 뒤 그대로 다시 던진다. 이미 `GlobalExceptionHandler`가 매핑해 4xx로 응답하는 도메인 예외들은 이 필터의 catch에 도달하지 않으므로 별도 로깅을 추가하지 않는다 — 접근 로그의 상태 코드로 4xx 발생 여부를 이미 알 수 있다. *(`ADR-012`(Proposed)로 amend됨 — Considered Alternatives #4 하단 각주 참고.)*
 9. **MDC 범위**: `traceId`만 MDC에 담는다. 인증된 사용자 식별자(userId/role)는 이번 범위에 포함하지 않는다.
 
 ## Decision Drivers
@@ -69,6 +69,8 @@ Accepted
 
 - 설명: 다른 도메인 예외 핸들러들과 같은 `@RestControllerAdvice`에 모든 예외를 잡는 fallback을 추가해 로깅.
 - 기각 사유(확인함): Spring MVC의 `HandlerExceptionResolverComposite`는 `@ControllerAdvice`의 `@ExceptionHandler`를 처리하는 `ExceptionHandlerExceptionResolver`를 가장 먼저 실행한다. 같은 advice에 `Exception::class` 핸들러가 있으면, `MethodArgumentNotValidException` 등 Spring이 기본으로 400 `ProblemDetail`로 변환해주던 예외까지 이 핸들러가 가로채 500으로 바꿔버리는 회귀가 발생한다. 대신 `RequestLoggingFilter`에서 `chain.doFilter()`를 감싸 처리되지 않은 예외만 로깅하는 방식(Decision 8)을 채택했다.
+
+> **Amended by `ADR-012`(Proposed)**: `GlobalExceptionHandler`가 `ResponseEntityExceptionHandler`를 상속하면 내장 MVC 예외(`MethodArgumentNotValidException` 등) 처리는 그대로 보존되어, 이 대안이 우려한 회귀 없이 `Exception::class` catch-all을 안전하게 추가할 수 있다는 방법을 찾았다(단, Spring Security 예외는 별도로 재던지기 처리가 필요 — `ADR-012` Decision Drivers 참고). `ADR-012`가 `Accepted`로 전환되면 Decision 8은 그 결정으로 대체된다. 이 문서 전체의 Status는 나머지 결정(1~7, 9)이 여전히 유효하므로 `Accepted`로 유지한다.
 
 ### 5. 도메인 예외 핸들러 11개 각각에 개별 로깅 추가
 
@@ -102,4 +104,5 @@ Accepted
 
 - `docs/ARCHITECTURE.md` — 8장 Deferred Decisions에 로깅/관측성 항목 없음(신규 영역)
 - `docs/adr/ADR-003-common-not-found-error-handling.md` — `GlobalExceptionHandler`의 기존 구조, 이 ADR이 건드리지 않는 이유(Decision 8, Considered Alternatives 4)
+- `docs/adr/ADR-012-global-exception-handling.md` — Decision 8(catch-all 미도입)을 amend
 - `docs/tasks/TASK-009-request-tracing-and-logging.md` — 이 ADR을 구현하는 TASK
