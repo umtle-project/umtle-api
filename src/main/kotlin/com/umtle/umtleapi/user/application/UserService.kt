@@ -1,5 +1,6 @@
 package com.umtle.umtleapi.user.application
 
+import com.umtle.umtleapi.student.domain.Student
 import com.umtle.umtleapi.student.domain.StudentNotFoundException
 import com.umtle.umtleapi.student.domain.StudentRepository
 import com.umtle.umtleapi.user.domain.PendingUserQuery
@@ -55,19 +56,14 @@ class UserService(
         if (role == UserRole.TEACHER && studentId != null) {
             throw InvalidSignupRequestException("TEACHER 가입에는 studentId를 설정할 수 없습니다.")
         }
-        if (role in setOf(UserRole.STUDENT, UserRole.PARENT) && studentId == null) {
-            throw InvalidSignupRequestException("${role.name} 가입에는 studentId가 필요합니다.")
+        if (role == UserRole.PARENT && studentId == null) {
+            throw InvalidSignupRequestException("PARENT 가입에는 studentId가 필요합니다.")
         }
         if (userRepository.existsByLoginId(loginId)) {
             throw DuplicateLoginIdException(loginId)
         }
 
-        val claimedStudentId =
-            studentId?.also {
-                if (!studentRepository.existsById(it)) {
-                    throw StudentNotFoundException(it)
-                }
-            }
+        val claimedStudentId = resolveClaimedStudentId(role, studentId, name)
 
         if (role == UserRole.STUDENT && claimedStudentId != null && userRepository.existsByStudentId(claimedStudentId)) {
             throw DuplicateStudentClaimException(claimedStudentId)
@@ -89,6 +85,28 @@ class UserService(
 
     @Transactional(readOnly = true)
     fun getUser(id: Long): User = userRepository.findById(id) ?: throw UserNotFoundException(id)
+
+    private fun resolveClaimedStudentId(
+        role: UserRole,
+        studentId: Long?,
+        name: String,
+    ): Long? =
+        when {
+            role == UserRole.STUDENT && studentId == null -> {
+                studentRepository.save(Student.register(name)).id
+            }
+
+            studentId != null -> {
+                if (!studentRepository.existsById(studentId)) {
+                    throw StudentNotFoundException(studentId)
+                }
+                studentId
+            }
+
+            else -> {
+                null
+            }
+        }
 
     @Transactional(readOnly = true)
     fun listPendingUsers(
