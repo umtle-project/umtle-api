@@ -233,6 +233,51 @@ class UserApiTests {
     }
 
     @Test
+    fun `student signup without studentId creates and claims a student`() {
+        val adminSession = adminSession()
+        val loginId = "self-student-${shortId()}"
+        val studentName = "자가등록학생-${shortId()}"
+
+        val signupResponse =
+            mockMvc
+                .perform(
+                    post("/api/v1/auth/signup")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(
+                            objectMapper.writeValueAsString(
+                                mapOf(
+                                    "loginId" to loginId,
+                                    "password" to "student-password",
+                                    "name" to studentName,
+                                    "role" to "STUDENT",
+                                ),
+                            ),
+                        ),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.studentId").exists())
+                .andReturn()
+
+        val studentId =
+            objectMapper
+                .readTree(signupResponse.response.contentAsString)
+                .get("studentId")
+                .asLong()
+
+        mockMvc
+            .perform(get("/api/v1/students/$studentId").session(adminSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value(studentName))
+            .andExpect(jsonPath("$.status").value("ACTIVE"))
+
+        mockMvc
+            .perform(get("/api/v1/students/search?name=$studentName"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.id == '$studentId')].name").value(studentName))
+    }
+
+    @Test
     fun `student and parent approval uses pending user id not claimed student id`() {
         val adminSession = adminSession()
         val teacherLoginId = "approval-id-teacher-${shortId()}"
@@ -358,6 +403,52 @@ class UserApiTests {
     }
 
     @Test
+    fun `rejecting self registered student signup leaves the student record`() {
+        val adminSession = adminSession()
+        val teacherLoginId = "self-reject-teacher-${shortId()}"
+        createUser(teacherLoginId, "teacher-password", "자가거절 선생님", listOf("TEACHER"), adminSession)
+        val teacherSession = loginSession(teacherLoginId, "teacher-password")
+        val loginId = "self-reject-student-${shortId()}"
+        val studentName = "자가거절학생-${shortId()}"
+
+        val signupResponse =
+            mockMvc
+                .perform(
+                    post("/api/v1/auth/signup")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(
+                            objectMapper.writeValueAsString(
+                                mapOf(
+                                    "loginId" to loginId,
+                                    "password" to "student-password",
+                                    "name" to studentName,
+                                    "role" to "STUDENT",
+                                ),
+                            ),
+                        ),
+                ).andExpect(status().isCreated)
+                .andReturn()
+
+        val responseJson = objectMapper.readTree(signupResponse.response.contentAsString)
+        val userId = responseJson.get("id").asLong()
+        val studentId = responseJson.get("studentId").asLong()
+
+        mockMvc
+            .perform(post("/api/v1/users/$userId/reject").with(csrf()).session(teacherSession))
+            .andExpect(status().isNoContent)
+
+        mockMvc
+            .perform(login(loginId, "student-password"))
+            .andExpect(status().isUnauthorized)
+
+        mockMvc
+            .perform(get("/api/v1/students/$studentId").session(adminSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value(studentName))
+    }
+
+    @Test
     fun `parent signup stores claimed child and can be rejected by active teacher`() {
         val adminSession = adminSession()
         val studentId = createStudent("거절학생-${shortId()}", adminSession)
@@ -432,10 +523,27 @@ class UserApiTests {
                     .content(
                         objectMapper.writeValueAsString(
                             mapOf(
+                                "loginId" to "student-long-name-${shortId()}",
+                                "password" to "student-password",
+                                "name" to "가".repeat(101),
+                                "role" to "STUDENT",
+                            ),
+                        ),
+                    ),
+            ).andExpect(status().isBadRequest)
+
+        mockMvc
+            .perform(
+                post("/api/v1/auth/signup")
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content(
+                        objectMapper.writeValueAsString(
+                            mapOf(
                                 "loginId" to "student-without-claim-${shortId()}",
                                 "password" to "student-password",
-                                "name" to "학생",
-                                "role" to "STUDENT",
+                                "name" to "학부모",
+                                "role" to "PARENT",
                             ),
                         ),
                     ),
