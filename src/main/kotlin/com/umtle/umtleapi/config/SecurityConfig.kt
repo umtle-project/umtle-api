@@ -3,13 +3,11 @@ package com.umtle.umtleapi.config
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.authentication.HttpStatusEntryPoint
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
 import org.springframework.web.cors.CorsConfiguration
@@ -17,7 +15,10 @@ import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
-class SecurityConfig {
+class SecurityConfig(
+    private val problemDetailAuthenticationEntryPoint: ProblemDetailAuthenticationEntryPoint,
+    private val problemDetailAccessDeniedHandler: ProblemDetailAccessDeniedHandler,
+) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
@@ -51,7 +52,8 @@ class SecurityConfig {
                 csrfTokenRequestHandler = SpaCsrfTokenRequestHandler()
             }
             exceptionHandling {
-                authenticationEntryPoint = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+                authenticationEntryPoint = problemDetailAuthenticationEntryPoint
+                accessDeniedHandler = problemDetailAccessDeniedHandler
             }
             formLogin { disable() }
             httpBasic { disable() }

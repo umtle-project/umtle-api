@@ -25,7 +25,8 @@ class AttendanceService(
         studentId: Long,
         status: AttendanceStatus,
     ): Attendance {
-        val lesson = lessonRepository.findById(lessonId) ?: throw LessonNotFoundException(lessonId)
+        val lesson =
+            lessonRepository.findById(lessonId) ?: throw LessonNotFoundException(lessonId)
         if (!studentRepository.existsById(studentId)) {
             throw StudentNotFoundException(studentId)
         }
