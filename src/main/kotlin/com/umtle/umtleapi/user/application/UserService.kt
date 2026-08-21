@@ -3,6 +3,7 @@ package com.umtle.umtleapi.user.application
 import com.umtle.umtleapi.student.domain.Student
 import com.umtle.umtleapi.student.domain.StudentNotFoundException
 import com.umtle.umtleapi.student.domain.StudentRepository
+import com.umtle.umtleapi.student.domain.StudentStatus
 import com.umtle.umtleapi.user.domain.PendingUserQuery
 import com.umtle.umtleapi.user.domain.User
 import com.umtle.umtleapi.user.domain.UserNotFoundException
@@ -98,7 +99,7 @@ class UserService(
     ): Long? =
         when {
             role == UserRole.STUDENT && studentId == null -> {
-                studentRepository.save(Student.register(name)).id
+                studentRepository.save(Student.registerPending(name)).id
             }
 
             studentId != null -> {
@@ -148,6 +149,7 @@ class UserService(
         val target = getUser(id)
         requireApprovalPermission(currentUser, target)
         target.approve()
+        activateLinkedPendingStudent(target)
         return userRepository.save(target)
     }
 
@@ -159,7 +161,28 @@ class UserService(
         val currentUser = currentUser(currentLoginId)
         val target = getUser(id)
         requireApprovalPermission(currentUser, target)
+        deactivateLinkedPendingStudent(target)
         userRepository.delete(target)
+    }
+
+    // 자기 회원가입으로 새로 만들어진 학생만 PENDING 상태이므로, 승인 시 이 학생만 활성화한다
+    // (기존 학생을 studentId로 지정해 가입한 경우 그 학생은 이미 ACTIVE이므로 영향받지 않는다).
+    private fun activateLinkedPendingStudent(target: User) {
+        val studentId = target.studentId ?: return
+        val student = studentRepository.findById(studentId) ?: throw StudentNotFoundException(studentId)
+        if (student.status == StudentStatus.PENDING) {
+            student.activate()
+            studentRepository.save(student)
+        }
+    }
+
+    private fun deactivateLinkedPendingStudent(target: User) {
+        val studentId = target.studentId ?: return
+        val student = studentRepository.findById(studentId) ?: throw StudentNotFoundException(studentId)
+        if (student.status == StudentStatus.PENDING) {
+            student.deactivate()
+            studentRepository.save(student)
+        }
     }
 
     private fun currentUser(loginId: String): User = userRepository.findByLoginId(loginId) ?: throw AccessDeniedException("Access denied")
