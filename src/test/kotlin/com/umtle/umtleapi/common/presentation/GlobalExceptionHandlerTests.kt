@@ -150,7 +150,7 @@ class GlobalExceptionHandlerTests {
 
         mockMvc
             .perform(
-                post("/api/v1/students")
+                post("/api/v1/classes")
                     .with(csrf())
                     .session(teacherSession)
                     .contentType(MediaType.APPLICATION_JSON)

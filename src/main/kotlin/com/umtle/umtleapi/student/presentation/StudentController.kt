@@ -37,11 +37,32 @@ class StudentController(
         @PathVariable id: Long,
     ): StudentResponse = StudentResponse.from(studentService.getStudent(id))
 
+    @GetMapping("/{id}/detail")
+    fun detail(
+        @PathVariable id: Long,
+    ): StudentDetailResponse = StudentDetailResponse.from(studentService.getStudentDetail(id))
+
     @PatchMapping("/{id}")
     fun update(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateStudentRequest,
     ): StudentResponse = StudentResponse.from(studentService.updateStudent(id, request.name))
+
+    @PatchMapping("/{id}/profile")
+    fun updateProfile(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: UpdateStudentProfileRequest,
+    ): StudentResponse =
+        StudentResponse.from(
+            studentService.updateStudentProfile(
+                id = id,
+                phone = request.phone,
+                birthDate = request.birthDate,
+                school = request.school,
+                grade = request.grade,
+                memo = request.memo,
+            ),
+        )
 
     @PostMapping("/{id}/deactivate")
     fun deactivate(
