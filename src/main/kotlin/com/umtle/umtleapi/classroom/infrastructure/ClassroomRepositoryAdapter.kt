@@ -34,6 +34,23 @@ class ClassroomRepositoryAdapter(
         }
     }
 
+    override fun findAllByStudentId(studentId: Long): List<Classroom> {
+        val classIds = studentJpaRepository.findByStudentId(studentId).map { it.classId }
+        if (classIds.isEmpty()) {
+            return emptyList()
+        }
+        val classes = jpaRepository.findAllById(classIds)
+        val studentIdsByClassId = findStudentIdsByClassId(classIds)
+        val teacherIdsByClassId = findTeacherIdsByClassId(classIds)
+
+        return classes.map {
+            it.toDomain(
+                studentIds = studentIdsByClassId[it.id].orEmpty(),
+                teacherIds = teacherIdsByClassId[it.id].orEmpty(),
+            )
+        }
+    }
+
     override fun existsById(id: Long): Boolean = jpaRepository.existsById(id)
 
     override fun existsStudentAssignment(

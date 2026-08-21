@@ -24,6 +24,11 @@ class StudentRepositoryAdapter(
             id = id,
             name = name,
             status = status,
+            phone = phone,
+            birthDate = birthDate,
+            school = school,
+            grade = grade,
+            memo = memo,
         )
 
     private fun StudentJpaEntity.toDomain() =
@@ -31,5 +36,10 @@ class StudentRepositoryAdapter(
             id = id,
             name = name,
             status = status,
+            phone = phone,
+            birthDate = birthDate,
+            school = school,
+            grade = grade,
+            memo = memo,
         )
 }
