@@ -259,11 +259,19 @@ class UserApiTests {
                 .andExpect(jsonPath("$.studentId").exists())
                 .andReturn()
 
-        val studentId =
-            objectMapper
-                .readTree(signupResponse.response.contentAsString)
-                .get("studentId")
-                .asLong()
+        val signupJson = objectMapper.readTree(signupResponse.response.contentAsString)
+        val userId = signupJson.get("id").asLong()
+        val studentId = signupJson.get("studentId").asLong()
+
+        mockMvc
+            .perform(get("/api/v1/students/$studentId").session(adminSession))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value(studentName))
+            .andExpect(jsonPath("$.status").value("PENDING"))
+
+        mockMvc
+            .perform(post("/api/v1/users/$userId/approve").with(csrf()).session(adminSession))
+            .andExpect(status().isOk)
 
         mockMvc
             .perform(get("/api/v1/students/$studentId").session(adminSession))
@@ -446,6 +454,7 @@ class UserApiTests {
             .perform(get("/api/v1/students/$studentId").session(adminSession))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.name").value(studentName))
+            .andExpect(jsonPath("$.status").value("INACTIVE"))
     }
 
     @Test

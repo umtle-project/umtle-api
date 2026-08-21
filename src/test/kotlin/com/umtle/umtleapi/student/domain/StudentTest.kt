@@ -60,6 +60,31 @@ class StudentTest {
     }
 
     @Test
+    fun `registerPending creates a pending student with a positive id`() {
+        val student = Student.registerPending("홍길동")
+
+        assertEquals("홍길동", student.name)
+        assertEquals(StudentStatus.PENDING, student.status)
+        assertTrue(student.id > 0)
+    }
+
+    @Test
+    fun `activate transitions a pending student to active`() {
+        val student = Student.registerPending("홍길동")
+
+        student.activate()
+
+        assertEquals(StudentStatus.ACTIVE, student.status)
+    }
+
+    @Test
+    fun `activate rejects a student that is not pending`() {
+        val student = Student.register("홍길동")
+
+        assertFailsWith<IllegalArgumentException> { student.activate() }
+    }
+
+    @Test
     fun `updateProfile replaces profile fields`() {
         val student = Student.register("홍길동")
         val birthDate = LocalDate.now().minusYears(10)

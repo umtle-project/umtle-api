@@ -58,6 +58,11 @@ class Student private constructor(
         status = StudentStatus.INACTIVE
     }
 
+    fun activate() {
+        require(status == StudentStatus.PENDING) { "대기 상태의 학생만 활성화할 수 있습니다." }
+        status = StudentStatus.ACTIVE
+    }
+
     companion object {
         fun register(name: String): Student {
             validateName(name)
@@ -65,6 +70,20 @@ class Student private constructor(
                 id = TsidCreator.getTsid().toLong(),
                 name = name,
                 status = StudentStatus.ACTIVE,
+                phone = null,
+                birthDate = null,
+                school = null,
+                grade = null,
+                memo = null,
+            )
+        }
+
+        fun registerPending(name: String): Student {
+            validateName(name)
+            return Student(
+                id = TsidCreator.getTsid().toLong(),
+                name = name,
+                status = StudentStatus.PENDING,
                 phone = null,
                 birthDate = null,
                 school = null,
