@@ -14,6 +14,7 @@ class LearningRecordTest {
         assertEquals(1L, learningRecord.studentId)
         assertEquals("분수 복습", learningRecord.title)
         assertEquals("약분 개념을 반복 연습함", learningRecord.content)
+        assertTrue(learningRecord.createdAt.toEpochMilli() > 0)
     }
 
     @Test

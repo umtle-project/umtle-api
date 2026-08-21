@@ -1,10 +1,12 @@
 package com.umtle.umtleapi.learningrecord.domain
 
 import com.github.f4b6a3.tsid.TsidCreator
+import java.time.Instant
 
 class LearningRecord private constructor(
     val id: Long,
     val studentId: Long,
+    val createdAt: Instant,
     title: String,
     content: String,
 ) {
@@ -35,6 +37,7 @@ class LearningRecord private constructor(
             return LearningRecord(
                 id = TsidCreator.getTsid().toLong(),
                 studentId = studentId,
+                createdAt = Instant.now(),
                 title = title,
                 content = content,
             )
@@ -43,6 +46,7 @@ class LearningRecord private constructor(
         fun reconstitute(
             id: Long,
             studentId: Long,
+            createdAt: Instant,
             title: String,
             content: String,
         ): LearningRecord {
@@ -51,6 +55,7 @@ class LearningRecord private constructor(
             return LearningRecord(
                 id = id,
                 studentId = studentId,
+                createdAt = createdAt,
                 title = title,
                 content = content,
             )

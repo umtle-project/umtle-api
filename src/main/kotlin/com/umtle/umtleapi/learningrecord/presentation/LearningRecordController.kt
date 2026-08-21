@@ -37,7 +37,14 @@ class LearningRecordController(
     ): List<LearningRecordResponse> =
         learningRecordService
             .findAllByStudentId(studentId)
-            .map { LearningRecordResponse.from(it) }
+            .let { learningRecords ->
+                learningRecords.mapIndexed { index, learningRecord ->
+                    LearningRecordResponse.from(
+                        learningRecord = learningRecord,
+                        no = learningRecords.size - index,
+                    )
+                }
+            }
 
     @GetMapping("/{id}")
     fun get(

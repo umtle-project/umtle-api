@@ -27,6 +27,7 @@ class LearningRecordRepositoryAdapter(
         LearningRecord.reconstitute(
             id = id,
             studentId = studentId,
+            createdAt = createdAt,
             title = title,
             content = content,
         )
