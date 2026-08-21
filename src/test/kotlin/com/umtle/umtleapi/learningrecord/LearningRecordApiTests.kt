@@ -44,7 +44,11 @@ class LearningRecordApiTests {
             .andExpect(jsonPath("$[0].id").value(secondRecordId))
             .andExpect(jsonPath("$[0].studentId").value(studentId))
             .andExpect(jsonPath("$[0].title").value("둘째 기록"))
+            .andExpect(jsonPath("$[0].createdAt").exists())
+            .andExpect(jsonPath("$[0].no").value(2))
             .andExpect(jsonPath("$[1].id").value(firstRecordId))
+            .andExpect(jsonPath("$[1].createdAt").exists())
+            .andExpect(jsonPath("$[1].no").value(1))
             .andExpect(jsonPath("$[?(@.studentId == '$otherStudentId')]").doesNotExist())
 
         mockMvc
@@ -52,6 +56,8 @@ class LearningRecordApiTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.title").value("둘째 기록"))
             .andExpect(jsonPath("$.content").value("둘째 내용"))
+            .andExpect(jsonPath("$.createdAt").exists())
+            .andExpect(jsonPath("$.no").doesNotExist())
 
         mockMvc
             .perform(
@@ -63,6 +69,8 @@ class LearningRecordApiTests {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.title").value("수정 기록"))
             .andExpect(jsonPath("$.content").value("수정 내용"))
+            .andExpect(jsonPath("$.createdAt").exists())
+            .andExpect(jsonPath("$.no").doesNotExist())
     }
 
     @Test
@@ -81,6 +89,8 @@ class LearningRecordApiTests {
             .perform(get("/api/v1/learning-records/$recordId").session(adminSession))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(recordId))
+            .andExpect(jsonPath("$.createdAt").exists())
+            .andExpect(jsonPath("$.no").doesNotExist())
     }
 
     @Test
@@ -288,6 +298,8 @@ class LearningRecordApiTests {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(mapOf("studentId" to studentId, "title" to title, "content" to content))),
                 ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.no").doesNotExist())
                 .andReturn()
 
         return response.readId()
