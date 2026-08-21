@@ -14,7 +14,8 @@ class HomeworkRepositoryAdapter(
 
     override fun findAll(): List<Homework> = jpaRepository.findAll().map { it.toDomain() }
 
-    override fun findAllByStudentId(studentId: Long): List<Homework> = jpaRepository.findAllByStudentId(studentId).map { it.toDomain() }
+    override fun findAllByStudentId(studentId: Long): List<Homework> =
+        jpaRepository.findAllByStudentIdOrderByCreatedAtDesc(studentId).map { it.toDomain() }
 
     override fun deleteById(id: Long) {
         jpaRepository.deleteById(id)

@@ -22,6 +22,7 @@
 | [ADR-008](adr/ADR-008-user-student-parent-connection.md) | 학생 계정은 선택적 1:1, 학부모-학생 연결은 다대다로 관리한다 | Accepted | 2026-08-12 |
 | [ADR-009](adr/ADR-009-user-signup-and-approval.md) | 사용자 자가 회원가입과 역할별 승인 절차를 도입한다 | Accepted | 2026-08-14 |
 | [ADR-010](adr/ADR-010-request-tracing-and-logging.md) | 요청 단위 traceId와 접근/쿼리 로깅 기본 방침을 도입한다 | Accepted | 2026-08-14 |
+| [ADR-013](adr/ADR-013-teacher-admin-parity-for-student-parent-domain.md) | 학생/학부모-연결 도메인에서 선생님과 관리자의 권한을 동등화한다 | Accepted | 2026-08-21 |
 
 ---
 

@@ -1,5 +1,6 @@
 package com.umtle.umtleapi.student.domain
 
+import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -81,5 +82,102 @@ class StudentTest {
         val student = Student.register("홍길동")
 
         assertFailsWith<IllegalArgumentException> { student.activate() }
+    }
+
+    @Test
+    fun `updateProfile replaces profile fields`() {
+        val student = Student.register("홍길동")
+        val birthDate = LocalDate.now().minusYears(10)
+
+        student.updateProfile(
+            phone = "010-1234-5678",
+            birthDate = birthDate,
+            school = "움틀초",
+            grade = "5학년",
+            memo = "메모",
+        )
+
+        assertEquals("010-1234-5678", student.phone)
+        assertEquals(birthDate, student.birthDate)
+        assertEquals("움틀초", student.school)
+        assertEquals("5학년", student.grade)
+        assertEquals("메모", student.memo)
+    }
+
+    @Test
+    fun `updateProfile can replace all profile fields with null`() {
+        val student = Student.register("홍길동")
+        student.updateProfile("010-1234-5678", LocalDate.now().minusYears(10), "움틀초", "5학년", "메모")
+
+        student.updateProfile(
+            phone = null,
+            birthDate = null,
+            school = null,
+            grade = null,
+            memo = null,
+        )
+
+        assertEquals(null, student.phone)
+        assertEquals(null, student.birthDate)
+        assertEquals(null, student.school)
+        assertEquals(null, student.grade)
+        assertEquals(null, student.memo)
+    }
+
+    @Test
+    fun `updateProfile rejects values longer than profile limits`() {
+        val student = Student.register("홍길동")
+
+        assertFailsWith<IllegalArgumentException> {
+            student.updateProfile(
+                phone = "1".repeat(Student.MAX_PHONE_LENGTH + 1),
+                birthDate = null,
+                school = null,
+                grade = null,
+                memo = null,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            student.updateProfile(
+                phone = null,
+                birthDate = null,
+                school = "가".repeat(Student.MAX_SCHOOL_LENGTH + 1),
+                grade = null,
+                memo = null,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            student.updateProfile(
+                phone = null,
+                birthDate = null,
+                school = null,
+                grade = "가".repeat(Student.MAX_GRADE_LENGTH + 1),
+                memo = null,
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            student.updateProfile(
+                phone = null,
+                birthDate = null,
+                school = null,
+                grade = null,
+                memo = "가".repeat(Student.MAX_MEMO_LENGTH + 1),
+            )
+        }
+    }
+
+    @Test
+    fun `updateProfile rejects future birthDate`() {
+        val student = Student.register("홍길동")
+
+        assertFailsWith<IllegalArgumentException> {
+            student.updateProfile(
+                phone = null,
+                birthDate = LocalDate.now().plusDays(1),
+                school = null,
+                grade = null,
+                memo = null,
+            )
+        }
     }
 }

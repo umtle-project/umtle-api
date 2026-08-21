@@ -14,6 +14,9 @@ class AttendanceRepositoryAdapter(
 
     override fun findAllByLessonId(lessonId: Long): List<Attendance> = jpaRepository.findAllByLessonId(lessonId).map { it.toDomain() }
 
+    override fun findAllByStudentId(studentId: Long): List<Attendance> =
+        jpaRepository.findAllByStudentIdOrderByCreatedAtDesc(studentId).map { it.toDomain() }
+
     override fun findAll(): List<Attendance> = jpaRepository.findAll().map { it.toDomain() }
 
     override fun existsByLessonIdAndStudentId(

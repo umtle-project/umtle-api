@@ -7,6 +7,8 @@ interface ClassroomRepository {
 
     fun findAll(): List<Classroom>
 
+    fun findAllByStudentId(studentId: Long): List<Classroom>
+
     fun existsById(id: Long): Boolean
 
     fun existsStudentAssignment(

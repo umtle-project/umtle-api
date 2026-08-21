@@ -23,7 +23,7 @@ Accepted (2026-08-12)
 1. **모든 학생이 로그인 계정을 가질 필요는 없다.** `Student`는 연결된 `User` 계정 없이도 독립적으로 등록·조회·수정될 수 있다 — 관리자/선생님이 계정 존재 여부와 무관하게 학생을 관리하는 현재 흐름을 그대로 유지한다. 계정이 없는 학생에게는 "본인 조회" 권한이 적용되지 않는다(로그인 자체가 불가능하므로).
 2. **학생 본인 계정 연결은 선택적 1:1이다.** `STUDENT` 역할을 가진 `User`는 최대 1개의 `Student`를 참조할 수 있다. `User`에 nullable `studentId: Long?` 필드를 추가하고, DB에는 `users.student_id BIGINT NULL` 컬럼과 UNIQUE 제약을 둔다(같은 학생을 두 계정이 동시에 참조하는 것을 방지). 물리 외래 키는 두지 않으며, 연결 시 대상 `Student`가 실제 존재하는지는 Application Service에서 검증한다(`ARCHITECTURE.md` §6.1).
 3. **학부모-학생 연결은 다대다다.** 한 학부모 계정이 여러 자녀를 가질 수 있고, 한 학생에 여러 보호자(예: 부모 모두)가 연결될 수 있다. `ADR-006`의 `Classroom.studentIds` 패턴을 그대로 따라, `PARENT` 역할을 가진 `User`가 `childStudentIds: Set<Long>` 형태로 노출하고, 내부적으로는 `@ElementCollection` 대신 `id + userId + studentId`만 가진 단순 JPA Entity(예: `UserChildJpaEntity`)로 저장한다.
-4. **두 연결 모두 관리자만 생성·해제할 수 있다.** `Classroom`-`Student` 배정, `Classroom`-`Teacher` 배정과 동일한 권한 주체 원칙을 그대로 적용한다.
+4. **두 연결 모두 관리자만 생성·해제할 수 있다.** `Classroom`-`Student` 배정, `Classroom`-`Teacher` 배정과 동일한 권한 주체 원칙을 그대로 적용한다. *(`ADR-013`으로 amend됨 — 학부모-학생 연결의 생성·해제 권한은 선생님에게도 관리자와 동등하게 부여된다. 학생 본인 계정 연결(`studentId`)의 생성·해제 권한 주체는 이 amend의 대상이 아니다.)*
 5. **역할과 연결 필드의 정합성은 Application Service가 검증한다.** `studentId`는 `STUDENT` 역할이 없는 `User`에 설정될 수 없고, `childStudentIds`는 `PARENT` 역할이 없는 `User`에 추가될 수 없다 — 다만 이 검증 로직의 정확한 배치와 세부 API는 이 ADR의 범위가 아니며, 이후 작성할 TASK 문서에서 확정한다.
 
 ## Decision Drivers
@@ -86,3 +86,4 @@ Accepted (2026-08-12)
 - `docs/USER_ROLES.md` §4
 - `docs/tasks/TASK-006-attendance-management.md`, `docs/tasks/TASK-007-homework-management.md` (Out of Scope로 미뤄둔 항목의 근거)
 - `docs/adr/ADR-009-user-signup-and-approval.md` — Decision 4("두 연결 모두 관리자만 생성·해제할 수 있다")를 확장해, 선생님의 회원가입 승인도 연결을 생성하는 유효한 경로로 추가한다. 학부모-학생 연결을 저장하는 JPA Entity는 `TASK-008` 구현 시 `ParentStudentJpaEntity`(`id + parentUserId + studentId`)라는 이름으로 실제 도입되었다 — 이 Decision 3이 예시로 든 `UserChildJpaEntity`라는 이름 자체는 채택되지 않았다.
+- `docs/adr/ADR-013-teacher-admin-parity-for-student-parent-domain.md` — Decision 4(학부모-학생 연결 생성·해제는 관리자 전용)를 amend, 선생님에게도 동등한 권한을 부여.

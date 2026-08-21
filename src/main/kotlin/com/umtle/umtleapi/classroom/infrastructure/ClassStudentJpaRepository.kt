@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface ClassStudentJpaRepository : JpaRepository<ClassStudentJpaEntity, Long> {
     fun findByClassId(classId: Long): List<ClassStudentJpaEntity>
 
+    fun findByStudentId(studentId: Long): List<ClassStudentJpaEntity>
+
     fun findByClassIdIn(classIds: Collection<Long>): List<ClassStudentJpaEntity>
 
     fun existsByClassIdAndStudentId(
