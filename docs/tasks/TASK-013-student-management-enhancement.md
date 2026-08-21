@@ -2,7 +2,7 @@
 
 ## Status
 
-In Review — `docs/reviews/REVIEW-TASK-013-2026-08-21.md`의 Major 항목(프로필 PATCH 부분 수정 시 데이터 유실)이 Codex 구현 및 Claude Code 검증으로 해소됨. 최종 병합 승인은 사람이 결정 대기 중.
+Merged — `docs/reviews/REVIEW-TASK-013-2026-08-21.md`의 Major 항목(프로필 PATCH 부분 수정 시 데이터 유실)이 Codex 구현 및 Claude Code 검증으로 해소됨. 사람이 PR #24를 `main`에 수동 머지 완료(2026-08-21).
 
 ## Purpose
 
