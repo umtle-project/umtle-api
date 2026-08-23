@@ -67,7 +67,7 @@
 - **수업(Lesson)**: 반에서 실제로 진행되는 개별 수업 단위. 관리자가 생성·조회·수정·취소·완료 처리한다.
 - 수업은 일정, 출결, 숙제, 학습 기록의 기준점이 된다.
 - Class와 Lesson은 별도 Aggregate이며, Lesson은 Class를 `classId`로만 참조한다(`ADR-006`).
-- 반-학생, 반-선생님 배정은 다대다이며 Class가 `studentIds`, `teacherIds` 순수 id 값 컬렉션으로 관리한다(`ADR-006`).
+- 반-학생 배정은 다대다이며 Class가 `studentIds` 순수 id 값 컬렉션으로 관리한다(`ADR-006`). 반-선생님 배정은 1:N이며 Class가 `teacherId`(nullable, 단일) 값으로 관리한다(`ADR-006` 원결정을 `ADR-014`가 이 부분에 한해 amend).
 - Lesson 상태값은 `SCHEDULED`, `COMPLETED`, `CANCELLED`다(`ADR-006`).
 
 ### 3.4 일정 (Schedule)
